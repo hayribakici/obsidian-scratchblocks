@@ -11,6 +11,21 @@ This plugin does two things:
 
 2. It renders `scratchblock` code blocks in scratch format
 
+
+**Example:**
+
+~~~suggestion
+```scratchblock
+when green flag clicked
+if <(0) > (1)> then
+```
+~~~
+
+will be rendered as
+
+<img src="" width="300px" />
+
+
 ## Contributing
 
 To make changes to this plugin, first ensure you have the dependencies
