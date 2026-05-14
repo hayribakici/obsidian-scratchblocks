@@ -8,7 +8,7 @@ This plugin does two things:
 
 1. it exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
 
-2. It renders `scratchblock` code blocks in scratch format
+2. It renders `scratchblock` code blocks in scratch format. Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) on how to write Scratch code.
 
 **Example:**
 
