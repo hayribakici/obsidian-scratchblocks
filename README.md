@@ -25,8 +25,7 @@ will be rendered as:
 
 ## Contributing
 
-To make changes to this plugin, first ensure you have the dependencies
-installed.
+To make changes to this plugin, first ensure you have the dependencies installed.
 
 ```
 npm install
@@ -40,9 +39,7 @@ To start building the plugin with what mode enabled run the following command:
 npm run dev
 ```
 
-_Note: If you haven't already installed the hot-reload-plugin you'll be prompted
-to. You need to enable that plugin in your obsidian vault before hot-reloading
-will start. You might need to refresh your plugin list for it to show up._
+_Note: If you haven't already installed the hot-reload-plugin you'll be prompted to. You need to enable that plugin in your obsidian vault before hot-reloading will start. You might need to refresh your plugin list for it to show up._
 
 ### Releasing
 
