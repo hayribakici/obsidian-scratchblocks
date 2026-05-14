@@ -6,11 +6,9 @@ This is a fork from [shabegom/obsidian-scratchblocks](https://github.com/shabego
 
 This plugin does two things:
 
-1. it exposes the `scratchblocks` library at the top level of Obsidian so you
-   can use it inside templater or other code running plugins
+1. it exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
 
 2. It renders `scratchblock` code blocks in scratch format
-
 
 **Example:**
 
@@ -20,9 +18,10 @@ when green flag clicked
 ```
 ~~~
 
-will be rendered as
+will be rendered as:
 
 <img width="120" height="66" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" />
+
 
 ## Contributing
 
