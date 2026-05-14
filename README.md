@@ -1,6 +1,6 @@
-# Scratchblocks
+# Obsidian-Scratchblocks
 
-render scratchblocks codeblocks
+This is a fork from [shabegom/obsidian-scratchblocks](https://github.com/shabegom/obsidian-scratchblocks/), which renders scratchblocks codeblocks into the [Obsidian](https://obsidian.md) editor.
 
 ## Usage
 
@@ -17,14 +17,12 @@ This plugin does two things:
 ~~~suggestion
 ```scratchblock
 when green flag clicked
-if <(0) > (1)> then
 ```
 ~~~
 
 will be rendered as
 
-<img src="" width="300px" />
-
+<img width="120" height="66" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" />
 
 ## Contributing
 
