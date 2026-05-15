@@ -8,5 +8,5 @@
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "types.d.ts", "main.ts"]
+  "include": ["src/**/*.ts", "types.d.ts", "src/main.ts"]
 }

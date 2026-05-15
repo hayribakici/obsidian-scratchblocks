@@ -2,7 +2,7 @@
   "name": "scratchblocks",
   "version": "0.0.3",
   "description": "Render scratchblocks codeblocks with language support",
-  "main": "lib/main.js",
+  "main": "main.js",
   "license": "MIT",
   "scripts": {
     "build": "obsidian-plugin build src/main.ts",
