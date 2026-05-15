@@ -22,12 +22,11 @@ will be rendered as:
 
 <img width="120" height="66" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" />
 
-
 ## Contributing
 
 To make changes to this plugin, first ensure you have the dependencies installed.
 
-```
+```bash
 npm install
 ```
 
@@ -35,7 +34,7 @@ npm install
 
 To start building the plugin with what mode enabled run the following command:
 
-```
+```bash
 npm run dev
 ```
 
@@ -45,7 +44,7 @@ _Note: If you haven't already installed the hot-reload-plugin you'll be prompted
 
 To start a release build run the following command:
 
-```
+```bash
 npm run build
 ```
 
