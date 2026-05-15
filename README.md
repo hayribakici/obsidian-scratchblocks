@@ -1,26 +1,22 @@
 # Obsidian-Scratchblocks
 
-This is a fork from [shabegom/obsidian-scratchblocks](https://github.com/shabegom/obsidian-scratchblocks/), which renders scratchblocks codeblocks into the [Obsidian](https://obsidian.md) editor.
+Add `scratchblock` or `scratchblocks` code into your [Obsidian](https://obsidian.md) markdown text.
 
-## Usage
-
-This plugin does two things:
-
-1. it exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
-
-2. It renders `scratchblock` code blocks in scratch format. Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) on how to write Scratch code.
-
-**Example:**
-
-~~~suggestion
+````suggestion
 ```scratchblock
 when green flag clicked
 ```
-~~~
+````
 
 will be rendered as:
 
 <img width="120" height="66" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" />
+
+Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) on how to write Scratch code.
+
+## Under the hood
+
+It exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
 
 ## Contributing
 
@@ -47,6 +43,10 @@ To start a release build run the following command:
 ```bash
 npm run build
 ```
+
+### Credits
+
+This is a fork from [shabegom/obsidian-scratchblocks](https://github.com/shabegom/obsidian-scratchblocks/), which renders scratchblocks codeblocks into the [Obsidian](https://obsidian.md) editor. Since that repository hasn't been maintained, this repository tries to fill its shoes.
 
 ---
 
