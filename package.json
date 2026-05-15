@@ -1,7 +1,7 @@
 {
   "name": "scratchblocks",
-  "version": "0.0.6",
-  "description": "Render scratchblocks codeblocks with language support",
+  "version": "0.0.7",
+  "description": "Render scratchblocks codeblocks with language support.",
   "main": "main.js",
   "license": "MIT",
   "scripts": {
@@ -17,7 +17,7 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "scratch-l10n": "^4.0.31",
-    "scratchblocks": "^3.6.4"
+    "scratch-l10n": "4.0.31",
+    "scratchblocks": "3.6.4"
   }
 }

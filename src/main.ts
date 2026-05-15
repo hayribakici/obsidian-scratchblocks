@@ -44,7 +44,9 @@ export default class Scratchblocks extends Plugin {
   wrapper: SBWrapper;
 
   get language() {
-    return scratchblocks.allLanguages[this.settings.languageCode];
+    return scratchblocks.allLanguages[
+      this.settings.languageCode as LanguageCode
+    ];
   }
 
   async onload() {
@@ -165,10 +167,7 @@ class ScratchblocksSettingTab extends PluginSettingTab {
     if (!this.stylePreviewDiv) return;
 
     this.stylePreviewDiv.empty();
-    const langData =
-      scratchblocks.allLanguages[
-        this.plugin.settings.languageCode as LanguageCode
-      ];
+    const langData = this.plugin.language();
     const greenFlagCmd = langData?.commands["EVENT_WHENFLAGCLICKED"];
     const svg = this.plugin.wrapper.getSVG(
       greenFlagCmd,
