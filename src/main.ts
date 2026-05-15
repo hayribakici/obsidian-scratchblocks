@@ -1,4 +1,10 @@
-import { Plugin, PluginSettingTab, App, Setting } from "obsidian";
+import {
+  Plugin,
+  PluginSettingTab,
+  App,
+  Setting,
+  MarkdownEditView,
+} from "obsidian";
 import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
 
@@ -14,43 +20,58 @@ const DEFAULT_SETTINGS: ScratchblocksSettings = {
 
 let AVAILABLE_LANGUAGES: string[] = [];
 
+class SBWrapper {
+  sb: any;
+
+  SBWrapper() {}
+
+  load() {
+    scratchblocks.loadLanguages(allLanguages);
+    scratchblocks.appendStyles();
+  }
+
+  getSVG(src: string, languages: string[], style: string): any {
+    const doc = scratchblocks.parse(src, {
+      languages: languages,
+    });
+    const svg = scratchblocks.render(doc, {
+      style: style,
+    });
+    return svg as any;
+  }
+}
+
 export default class Scratchblocks extends Plugin {
   settings: ScratchblocksSettings;
+  wrapper: SBWrapper;
 
   async onload() {
+    this.wrapper = new SBWrapper();
+
     try {
       await this.loadSettings();
-      scratchblocks.loadLanguages(allLanguages);
-      scratchblocks.appendStyles();
+      this.wrapper.load();
 
       AVAILABLE_LANGUAGES = Object.keys(scratchblocks.allLanguages).filter(
-        (code) => code !== "en",
+        (code) => code !== "en"
       );
 
-      window["scratchblocks"] = scratchblocks;
+      // window["scratchblocks"] = scratchblocks;
 
       this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el) => {
         const languages = ["en", this.settings.language].filter(
-          (lang, index, self) => self.indexOf(lang) === index,
+          (lang, index, self) => self.indexOf(lang) === index
         );
-
         try {
-          const doc = scratchblocks.parse(src, {
-            languages: languages,
-          });
-          const svg = scratchblocks.render(doc, {
-            style: this.settings.style,
-          });
-
-          if (svg) {
-            el.replaceWith(svg);
-          }
+          const svg = this.wrapper.getSVG(src, languages, this.settings.style);
+          el.replaceWith(svg);
         } catch (error) {
           el.createEl("div", {
-            text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            text: `Error: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
             cls: "scratchblocks-error",
           });
-          console.error("Scratchblocks render error:", error);
         }
       });
 
@@ -68,18 +89,18 @@ export default class Scratchblocks extends Plugin {
   }
 
   async saveSettings() {
-      await this.saveData(this.settings);
-      this.app.workspace.iterateAllLeaves((leaf) => {
-        if (leaf.view instanceof MarkdownView) {
-          leaf.view.previewMode?.rerender();
-        }
-      });
-    }
+    await this.saveData(this.settings);
+    // this.app.workspace.iterateAllLeaves((leaf) => {
+    //   // if (leaf.view instanceof MarkdownEditView) {
+    //   //   // TODO rerender the editor
+    //   // }
+    // });
   }
 }
 
 class ScratchblocksSettingTab extends PluginSettingTab {
   plugin: Scratchblocks;
+  stylePreviewDiv: HTMLDivElement | null = null;
 
   constructor(app: App, plugin: Scratchblocks) {
     super(app, plugin);
@@ -88,9 +109,13 @@ class ScratchblocksSettingTab extends PluginSettingTab {
 
   display(): void {
     const { containerEl } = this;
-
     containerEl.empty();
 
+    new Setting(containerEl)
+      .setName("Scratchblocks display settings")
+      .setHeading();
+
+    // Language Setting (ohne Preview)
     new Setting(containerEl)
       .setName("Language")
       .setDesc("Select the language for Scratch blocks")
@@ -111,6 +136,7 @@ class ScratchblocksSettingTab extends PluginSettingTab {
           });
       });
 
+    // Style Setting mit Preview direkt darunter (im selben Setting)
     new Setting(containerEl)
       .setName("Style")
       .setDesc("Choose the visual style for Scratch blocks")
@@ -123,7 +149,32 @@ class ScratchblocksSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.style = value;
             await this.plugin.saveSettings();
-          }),
+            this.updateStylePreview();
+          })
       );
+
+    this.stylePreviewDiv = new Setting(containerEl)
+      .setName("Preview")
+      .setDesc("Preview of the block style")
+      .settingEl.createDiv({
+        cls: "scratchblocks-style-preview",
+      });
+
+    this.updateStylePreview();
+  }
+
+  updateStylePreview(): void {
+    if (!this.stylePreviewDiv) return;
+
+    this.stylePreviewDiv.empty();
+
+    const sb = this.plugin.wrapper;
+    const svg = sb.getSVG(
+      "When green flag clicked",
+      ["en"],
+      this.plugin.settings.style
+    );
+
+    this.stylePreviewDiv.appendChild(svg);
   }
 }
