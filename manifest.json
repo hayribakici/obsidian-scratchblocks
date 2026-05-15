@@ -1,9 +1,9 @@
 {
   "id": "scratchblocks",
   "name": "Scratchblocks",
-  "description": "Render scratchblocks codeblocks.",
+  "description": "Render Scratchblocks code blocks in Obsidian with language and style support.",
   "author": "shabegom, hayribakici",
   "minAppVersion": "0.12.16",
   "isDesktopOnly": false,
-  "version": "0.0.9"
+  "version": "0.0.10"
 }

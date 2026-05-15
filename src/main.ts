@@ -1,108 +1,82 @@
-import { Plugin, PluginSettingTab, App, Setting, MarkdownView } from "obsidian";
+import { MarkdownView, Plugin } from "obsidian";
 import scratchblocks from "scratchblocks";
-import allLanguages from "scratchblocks/locales/all.js";
 
-type LanguageCode = keyof typeof scratchblocks.allLanguages;
+import { ScratchblocksSettingTab } from "./settings";
+import { SBRenderer } from "./renderer";
+import { createRenderedBlock } from "./ui/rendered-block";
 
-type ScratchblocksStyle = "scratch2" | "scratch3" | "scratch3-high-contrast";
-
-interface ScratchblocksSettings {
-  languageCode: LanguageCode;
-  style: ScratchblocksStyle;
-}
+import type { LanguageCode, ScratchblocksSettings } from "./types";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
   languageCode: "en" as LanguageCode,
   style: "scratch3",
+  scale: 1,
 };
 
-let AVAILABLE_LANGUAGES: LanguageCode[] = [];
-
-class SBWrapper {
-  load() {
-    scratchblocks.loadLanguages(allLanguages);
-    scratchblocks.appendStyles();
-  }
-
-  getSVG(
-    src: string,
-    languages: LanguageCode[],
-    style: ScratchblocksStyle
-  ): SVGElement {
-    const doc = scratchblocks.parse(src, {
-      languages,
-    });
-
-    return scratchblocks.render(doc, {
-      style,
-    });
-  }
-}
-
-export default class Scratchblocks extends Plugin {
+export default class ScratchblocksPlugin extends Plugin {
   settings: ScratchblocksSettings;
-  wrapper: SBWrapper;
+  renderer: SBRenderer;
 
   get language() {
-    return scratchblocks.allLanguages[
-      this.settings.languageCode as LanguageCode
-    ];
+    return scratchblocks.allLanguages[this.settings.languageCode];
   }
 
   async onload() {
-    this.wrapper = new SBWrapper();
+    this.renderer = new SBRenderer();
 
-    try {
-      await this.loadSettings();
-      this.wrapper.load();
+    await this.loadSettings();
+    this.renderer.load();
 
-      AVAILABLE_LANGUAGES = Object.keys(
-        scratchblocks.allLanguages
-      ) as LanguageCode[];
+    const processor = (src: string, el: HTMLElement) => {
+      const languages = Array.from(
+        new Set<LanguageCode>([
+          this.settings.languageCode,
+          "en" as LanguageCode,
+        ])
+      );
 
-      AVAILABLE_LANGUAGES = AVAILABLE_LANGUAGES.filter((code) => code !== "en");
-      const processScratchblockCode = (src: string, el: HTMLElement) => {
-        const languages = Array.from(
-          new Set<LanguageCode>([
-            this.settings.languageCode,
-            "en" as LanguageCode,
-          ])
+      try {
+        const svg = this.renderer.getSVG(
+          src,
+          languages,
+          this.settings.style,
+          this.settings.scale
         );
 
-        try {
-          const svg = this.wrapper.getSVG(src, languages, this.settings.style);
+        const rendered = createRenderedBlock(src, svg);
 
-          el.replaceWith(svg);
-        } catch (error) {
-          el.createEl("div", {
-            text: `Error: ${
-              error instanceof Error ? error.message : String(error)
+        el.replaceWith(rendered);
+      } catch (error) {
+        el.createEl("div", {
+          text: `Error: ${error instanceof Error ? error.message : String(error)
             }`,
-            cls: "scratchblocks-error",
-          });
-        }
-      };
+          cls: "scratchblocks-error",
+        });
+      }
+    };
 
-      this.registerMarkdownCodeBlockProcessor(
-        "scratchblock",
-        processScratchblockCode
-      );
-      this.registerMarkdownCodeBlockProcessor(
-        "scratchblocks",
-        processScratchblockCode
-      );
+    this.registerMarkdownCodeBlockProcessor("scratchblock", processor);
+    this.registerMarkdownCodeBlockProcessor("scratchblocks", processor);
 
-      this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
-    } catch (error) {
-      console.error("Failed to load plugin:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "");
-    }
+    this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
   }
 
-  onunload() {}
-
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loaded = await this.loadData();
+
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+
+    if (!scratchblocks.allLanguages[this.settings.languageCode]) {
+      this.settings.languageCode = "en" as LanguageCode;
+    }
+
+    if (
+      !["scratch2", "scratch3", "scratch3-high-contrast"].includes(
+        this.settings.style
+      )
+    ) {
+      this.settings.style = "scratch3";
+    }
   }
 
   async saveSettings() {
@@ -111,91 +85,10 @@ export default class Scratchblocks extends Plugin {
 
   refreshMarkdownViews() {
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
-      const view = leaf.view;
-
-      if (view instanceof MarkdownView) {
+      if (leaf.view instanceof MarkdownView) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (leaf as any).rebuildView();
       }
     });
-  }
-}
-
-class ScratchblocksSettingTab extends PluginSettingTab {
-  plugin: Scratchblocks;
-  stylePreviewDiv: HTMLDivElement | null = null;
-
-  constructor(app: App, plugin: Scratchblocks) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-
-    new Setting(containerEl)
-      .setName("Language")
-      .setDesc("Select the language for Scratch blocks")
-      .addDropdown((dropdown) => {
-        dropdown.addOption("en", "English");
-
-        AVAILABLE_LANGUAGES.sort().forEach((code) => {
-          const langData = scratchblocks.allLanguages[code];
-          const langName = langData?.name || code;
-
-          dropdown.addOption(code, langName);
-        });
-
-        dropdown
-          .setValue(this.plugin.settings.languageCode)
-          .onChange(async (value) => {
-            this.plugin.settings.languageCode = value as LanguageCode;
-            await this.plugin.saveSettings();
-            this.updateStylePreview();
-            this.plugin.refreshMarkdownViews();
-          });
-      });
-
-    new Setting(containerEl)
-      .setName("Style")
-      .setDesc("Choose the visual style for Scratch blocks")
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("scratch2", "Scratch 2")
-          .addOption("scratch3", "Scratch 3")
-          .addOption("scratch3-high-contrast", "Scratch 3 High Contrast")
-          .setValue(this.plugin.settings.style)
-          .onChange(async (value) => {
-            this.plugin.settings.style = value as ScratchblocksStyle;
-            await this.plugin.saveSettings();
-
-            this.updateStylePreview();
-            this.plugin.refreshMarkdownViews();
-          })
-      );
-
-    this.stylePreviewDiv = new Setting(containerEl)
-      .setName("Preview")
-      .setDesc("Preview of the block style")
-      .settingEl.createDiv({
-        cls: "scratchblocks-style-preview",
-      });
-
-    this.updateStylePreview();
-  }
-
-  updateStylePreview(): void {
-    if (!this.stylePreviewDiv) return;
-
-    this.stylePreviewDiv.empty();
-    const langData = this.plugin.language;
-    const greenFlagCmd = langData?.commands["EVENT_WHENFLAGCLICKED"];
-    const svg = this.plugin.wrapper.getSVG(
-      greenFlagCmd,
-      [this.plugin.settings.languageCode],
-      this.plugin.settings.style
-    );
-
-    this.stylePreviewDiv.appendChild(svg);
   }
 }

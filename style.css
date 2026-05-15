@@ -1,0 +1,36 @@
+.scratchblocks-rendered {
+    display: inline-block;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.scratchblocks-rendered svg {
+    display: block;
+}
+
+.scratchblocks-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-block-end: 6px;
+
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.scratchblocks-copy-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+
+    cursor: pointer;
+}
+
+.scratchblocks-copy-button svg {
+    width: 16px;
+    height: 16px;
+}

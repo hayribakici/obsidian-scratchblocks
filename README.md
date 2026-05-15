@@ -1,6 +1,6 @@
 # Obsidian-Scratchblocks
 
-Add `scratchblock` or `scratchblocks` code into your [Obsidian](https://obsidian.md) markdown text.
+Render `scratchblocks` code blocks in Obsidian.
 
 ````suggestion
 ```scratchblock
