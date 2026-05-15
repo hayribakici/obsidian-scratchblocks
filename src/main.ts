@@ -2,40 +2,50 @@ import { Plugin, PluginSettingTab, App, Setting } from "obsidian";
 import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
 
+type LanguageCode = keyof typeof scratchblocks.allLanguages;
+
+type ScratchblocksStyle = "scratch2" | "scratch3" | "scratch3-high-contrast";
+
 interface ScratchblocksSettings {
-  language: string;
-  style: string;
+  languageCode: LanguageCode;
+  style: ScratchblocksStyle;
 }
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
-  language: "en",
+  languageCode: "en" as LanguageCode,
   style: "scratch3",
 };
 
-let AVAILABLE_LANGUAGES: string[] = [];
+let AVAILABLE_LANGUAGES: LanguageCode[] = [];
 
 class SBWrapper {
-  SBWrapper() {}
-
   load() {
     scratchblocks.loadLanguages(allLanguages);
     scratchblocks.appendStyles();
   }
 
-  getSVG(src: string, languages: string[], style: string): SVGElement {
+  getSVG(
+    src: string,
+    languages: LanguageCode[],
+    style: ScratchblocksStyle
+  ): SVGElement {
     const doc = scratchblocks.parse(src, {
-      languages: languages,
+      languages,
     });
-    const svg = scratchblocks.render(doc, {
-      style: style,
+
+    return scratchblocks.render(doc, {
+      style,
     });
-    return svg;
   }
 }
 
 export default class Scratchblocks extends Plugin {
   settings: ScratchblocksSettings;
   wrapper: SBWrapper;
+
+  get language() {
+    return scratchblocks.allLanguages[this.settings.languageCode];
+  }
 
   async onload() {
     this.wrapper = new SBWrapper();
@@ -44,16 +54,23 @@ export default class Scratchblocks extends Plugin {
       await this.loadSettings();
       this.wrapper.load();
 
-      AVAILABLE_LANGUAGES = Object.keys(scratchblocks.allLanguages).filter(
-        (code) => code !== "en"
-      );
+      AVAILABLE_LANGUAGES = Object.keys(
+        scratchblocks.allLanguages
+      ) as LanguageCode[];
+
+      AVAILABLE_LANGUAGES = AVAILABLE_LANGUAGES.filter((code) => code !== "en");
 
       this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el) => {
-        const languages = ["en", this.settings.language].filter(
-          (lang, index, self) => self.indexOf(lang) === index
+        const languages = Array.from(
+          new Set<LanguageCode>([
+            "en" as LanguageCode,
+            this.settings.languageCode,
+          ])
         );
+
         try {
           const svg = this.wrapper.getSVG(src, languages, this.settings.style);
+
           el.replaceWith(svg);
         } catch (error) {
           el.createEl("div", {
@@ -96,7 +113,6 @@ class ScratchblocksSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    // Language Setting (ohne Preview)
     new Setting(containerEl)
       .setName("Language")
       .setDesc("Select the language for Scratch blocks")
@@ -105,19 +121,20 @@ class ScratchblocksSettingTab extends PluginSettingTab {
 
         AVAILABLE_LANGUAGES.sort().forEach((code) => {
           const langData = scratchblocks.allLanguages[code];
-          const langName: string = langData?.name || code;
+          const langName = langData?.name || code;
+
           dropdown.addOption(code, langName);
         });
 
         dropdown
-          .setValue(this.plugin.settings.language)
+          .setValue(this.plugin.settings.languageCode)
           .onChange(async (value) => {
-            this.plugin.settings.language = value;
+            this.plugin.settings.languageCode = value as LanguageCode;
             await this.plugin.saveSettings();
+            this.updateStylePreview();
           });
       });
 
-    // Style Setting mit Preview direkt darunter (im selben Setting)
     new Setting(containerEl)
       .setName("Style")
       .setDesc("Choose the visual style for Scratch blocks")
@@ -125,10 +142,10 @@ class ScratchblocksSettingTab extends PluginSettingTab {
         dropdown
           .addOption("scratch2", "Scratch 2")
           .addOption("scratch3", "Scratch 3")
-          .addOption("scratch3-high-contrast", "Scratch 3 (High Contrast)")
+          .addOption("scratch3-high-contrast", "Scratch 3 High Contrast")
           .setValue(this.plugin.settings.style)
           .onChange(async (value) => {
-            this.plugin.settings.style = value;
+            this.plugin.settings.style = value as ScratchblocksStyle;
             await this.plugin.saveSettings();
             this.updateStylePreview();
           })
@@ -148,11 +165,14 @@ class ScratchblocksSettingTab extends PluginSettingTab {
     if (!this.stylePreviewDiv) return;
 
     this.stylePreviewDiv.empty();
-
-    const sb = this.plugin.wrapper;
-    const svg = sb.getSVG(
-      "When green flag clicked",
-      ["en"],
+    const langData =
+      scratchblocks.allLanguages[
+        this.plugin.settings.languageCode as LanguageCode
+      ];
+    const greenFlagCmd = langData?.commands["EVENT_WHENFLAGCLICKED"];
+    const svg = this.plugin.wrapper.getSVG(
+      greenFlagCmd,
+      [langData?.code as LanguageCode],
       this.plugin.settings.style
     );
 
