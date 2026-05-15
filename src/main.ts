@@ -61,12 +61,11 @@ export default class Scratchblocks extends Plugin {
       ) as LanguageCode[];
 
       AVAILABLE_LANGUAGES = AVAILABLE_LANGUAGES.filter((code) => code !== "en");
-
-      this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el) => {
+      const processScratchblockCode = (src: string, el: HTMLElement) => {
         const languages = Array.from(
           new Set<LanguageCode>([
-            "en" as LanguageCode,
             this.settings.languageCode,
+            "en" as LanguageCode,
           ])
         );
 
@@ -82,7 +81,16 @@ export default class Scratchblocks extends Plugin {
             cls: "scratchblocks-error",
           });
         }
-      });
+      };
+
+      this.registerMarkdownCodeBlockProcessor(
+        "scratchblock",
+        processScratchblockCode
+      );
+      this.registerMarkdownCodeBlockProcessor(
+        "scratchblocks",
+        processScratchblockCode
+      );
 
       this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
     } catch (error) {
@@ -184,7 +192,7 @@ class ScratchblocksSettingTab extends PluginSettingTab {
     const greenFlagCmd = langData?.commands["EVENT_WHENFLAGCLICKED"];
     const svg = this.plugin.wrapper.getSVG(
       greenFlagCmd,
-      [langData?.code as LanguageCode],
+      [this.plugin.settings.languageCode],
       this.plugin.settings.style
     );
 
