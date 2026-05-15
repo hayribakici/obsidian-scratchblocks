@@ -5,6 +5,5 @@
   "author": "shabegom, hayribakici",
   "minAppVersion": "0.12.16",
   "isDesktopOnly": false,
-  "version": "0.0.8",
-  "main": "main.js"
+  "version": "0.0.9"
 }
