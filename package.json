@@ -13,11 +13,11 @@
     "@typescript-eslint/parser": "^5.35.1",
     "eslint": "^8.22.0",
     "obsidian": "obsidianmd/obsidian-api",
-    "obsidian-plugin-cli": "^0.4.3",
+    "obsidian-plugin-cli": "^0.4.5",
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "scratchblocks": "^3.6.4",
-    "scratch-l10n": "^4.0.31"
+    "scratch-l10n": "^4.0.31",
+    "scratchblocks": "^3.6.4"
   }
 }
