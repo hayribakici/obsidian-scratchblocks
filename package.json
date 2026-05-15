@@ -1,6 +1,6 @@
 {
   "name": "scratchblocks",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Render scratchblocks codeblocks with language support",
   "main": "main.js",
   "license": "MIT",

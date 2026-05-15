@@ -1,10 +1,4 @@
-import {
-  Plugin,
-  PluginSettingTab,
-  App,
-  Setting,
-  MarkdownEditView,
-} from "obsidian";
+import { Plugin, PluginSettingTab, App, Setting } from "obsidian";
 import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
 
@@ -21,8 +15,6 @@ const DEFAULT_SETTINGS: ScratchblocksSettings = {
 let AVAILABLE_LANGUAGES: string[] = [];
 
 class SBWrapper {
-  sb: any;
-
   SBWrapper() {}
 
   load() {
@@ -30,14 +22,14 @@ class SBWrapper {
     scratchblocks.appendStyles();
   }
 
-  getSVG(src: string, languages: string[], style: string): any {
+  getSVG(src: string, languages: string[], style: string): SVGElement {
     const doc = scratchblocks.parse(src, {
       languages: languages,
     });
     const svg = scratchblocks.render(doc, {
       style: style,
     });
-    return svg as any;
+    return svg;
   }
 }
 
@@ -104,10 +96,6 @@ class ScratchblocksSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl)
-      .setName("Scratchblocks display settings")
-      .setHeading();
-
     // Language Setting (ohne Preview)
     new Setting(containerEl)
       .setName("Language")
@@ -117,7 +105,7 @@ class ScratchblocksSettingTab extends PluginSettingTab {
 
         AVAILABLE_LANGUAGES.sort().forEach((code) => {
           const langData = scratchblocks.allLanguages[code];
-          const langName = langData?.name || code;
+          const langName: string = langData?.name || code;
           dropdown.addOption(code, langName);
         });
 
