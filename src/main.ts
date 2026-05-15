@@ -56,8 +56,6 @@ export default class Scratchblocks extends Plugin {
         (code) => code !== "en"
       );
 
-      // window["scratchblocks"] = scratchblocks;
-
       this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el) => {
         const languages = ["en", this.settings.language].filter(
           (lang, index, self) => self.indexOf(lang) === index
@@ -90,11 +88,6 @@ export default class Scratchblocks extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
-    // this.app.workspace.iterateAllLeaves((leaf) => {
-    //   // if (leaf.view instanceof MarkdownEditView) {
-    //   //   // TODO rerender the editor
-    //   // }
-    // });
   }
 }
 
