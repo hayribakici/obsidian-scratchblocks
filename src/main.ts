@@ -1,4 +1,4 @@
-import { Plugin, PluginSettingTab, App, Setting } from "obsidian";
+import { Plugin, PluginSettingTab, App, Setting, MarkdownView } from "obsidian";
 import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
 
@@ -100,6 +100,16 @@ export default class Scratchblocks extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
+
+  refreshMarkdownViews() {
+    this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
+      const view = leaf.view;
+
+      if (view instanceof MarkdownView) {
+        (leaf as any).rebuildView();
+      }
+    });
+  }
 }
 
 class ScratchblocksSettingTab extends PluginSettingTab {
@@ -134,6 +144,7 @@ class ScratchblocksSettingTab extends PluginSettingTab {
             this.plugin.settings.languageCode = value as LanguageCode;
             await this.plugin.saveSettings();
             this.updateStylePreview();
+            this.plugin.refreshMarkdownViews();
           });
       });
 
@@ -149,7 +160,9 @@ class ScratchblocksSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.style = value as ScratchblocksStyle;
             await this.plugin.saveSettings();
+
             this.updateStylePreview();
+            this.plugin.refreshMarkdownViews();
           })
       );
 
@@ -167,7 +180,7 @@ class ScratchblocksSettingTab extends PluginSettingTab {
     if (!this.stylePreviewDiv) return;
 
     this.stylePreviewDiv.empty();
-    const langData = this.plugin.language();
+    const langData = this.plugin.language;
     const greenFlagCmd = langData?.commands["EVENT_WHENFLAGCLICKED"];
     const svg = this.plugin.wrapper.getSVG(
       greenFlagCmd,
