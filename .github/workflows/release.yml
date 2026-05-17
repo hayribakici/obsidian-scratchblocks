@@ -38,9 +38,7 @@ jobs:
         run: |
           tag="${GITHUB_REF#refs/tags/}"
 
-          cd dist
-
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            main.js manifest.json styles.css
+            dist/main.js dist/manifest.json styles.css
