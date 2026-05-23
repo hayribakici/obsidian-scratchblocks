@@ -3,7 +3,11 @@ import scratchblocks from "scratchblocks";
 
 import type ScratchblocksPlugin from "./main";
 
-import type { LanguageCode, ScratchblocksStyle } from "./types";
+import type {
+    LanguageCode,
+    ScratchblocksPNGExportPath,
+    ScratchblocksStyle,
+} from "./types";
 
 export class ScratchblocksSettingTab extends PluginSettingTab {
     plugin: ScratchblocksPlugin;
@@ -21,6 +25,24 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
         const availableLanguages = (
             Object.keys(scratchblocks.allLanguages) as LanguageCode[]
         ).filter((code) => code !== "en");
+
+        containerEl.createEl("h3", { text: "Display" });
+
+        new Setting(containerEl)
+            .setName("Show toolbar")
+            .setDesc("Show export and copy buttons above rendered Scratch blocks")
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.showToolbar)
+                    .onChange(async (value) => {
+                        this.plugin.settings.showToolbar = value;
+                        await this.plugin.saveSettings();
+
+                        this.plugin.refreshMarkdownViews();
+                    })
+            );
+
+        containerEl.createEl("h3", { text: "Rendering" });
 
         new Setting(containerEl)
             .setName("Language")
@@ -81,12 +103,44 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     })
             );
 
+        containerEl.createEl("h3", { text: "Preview" });
+
         this.stylePreviewDiv = new Setting(containerEl)
             .setName("Preview")
             .setDesc("Preview of the current settings")
             .settingEl.createDiv({
                 cls: "scratchblocks-style-preview",
             });
+
+        containerEl.createEl("h3", { text: "Exporting" });
+
+        new Setting(containerEl)
+            .setName("PNG filename template")
+            .setDesc("Use {firstLine} and/or {datetime}; .png is added automatically")
+            .addText((text) =>
+                text
+                    .setPlaceholder("scratchblocks_{firstLine}")
+                    .setValue(this.plugin.settings.pngFilenameTemplate)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pngFilenameTemplate = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName("PNG export location")
+            .setDesc("Choose where PNG exports are saved")
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOption("ask", "Ask / default download")
+                    .addOption("current", "Current note folder")
+                    .setValue(this.plugin.settings.pngExportPath)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pngExportPath =
+                            value as ScratchblocksPNGExportPath;
+                        await this.plugin.saveSettings();
+                    })
+            );
 
         this.updateStylePreview();
     }

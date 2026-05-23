@@ -3,14 +3,19 @@ import scratchblocks from "scratchblocks";
 
 import { ScratchblocksSettingTab } from "./settings";
 import { SBRenderer } from "./renderer";
-import { createRenderedBlock } from "./ui/rendered-block";
+import { copySourceAsSVG, getScratchblocksSource } from "./commands";
+import { createRenderedBlock } from "./rendered-block";
 
 import type { LanguageCode, ScratchblocksSettings } from "./types";
+import type { MarkdownPostProcessorContext } from "obsidian";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
   languageCode: "en" as LanguageCode,
   style: "scratch3",
   scale: 1,
+  showToolbar: true,
+  pngFilenameTemplate: "scratchblocks_{firstLine}",
+  pngExportPath: "current",
 };
 
 export default class ScratchblocksPlugin extends Plugin {
@@ -27,38 +32,95 @@ export default class ScratchblocksPlugin extends Plugin {
     await this.loadSettings();
     this.renderer.load();
 
-    const processor = (src: string, el: HTMLElement) => {
-      const languages = Array.from(
-        new Set<LanguageCode>([
-          this.settings.languageCode,
-          "en" as LanguageCode,
-        ])
+    this.registerScratchblocksProcessors();
+    this.registerCommands();
+    this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
+  }
+
+  private registerScratchblocksProcessors() {
+    this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el, ctx) =>
+      this.renderScratchblocksCodeBlock(src, el, ctx)
+    );
+    this.registerMarkdownCodeBlockProcessor("scratchblocks", (src, el, ctx) =>
+      this.renderScratchblocksCodeBlock(src, el, ctx)
+    );
+  }
+
+  private registerCommands() {
+    this.addCommand({
+      id: "scratchblocks-copy-svg",
+      name: "Copy Scratchblocks SVG",
+      editorCheckCallback: (checking, editor) => {
+        const src = getScratchblocksSource(editor);
+
+        if (!src) {
+          return false;
+        }
+
+        if (!checking) {
+          void copySourceAsSVG(src, (source) => this.renderSVGString(source));
+        }
+
+        return true;
+      },
+    });
+  }
+
+  private renderScratchblocksCodeBlock(
+    src: string,
+    el: HTMLElement,
+    ctx: MarkdownPostProcessorContext
+  ) {
+    try {
+      const svg = this.renderer.getSVG(
+        src,
+        this.getLanguages(),
+        this.settings.style,
+        this.settings.scale
       );
 
-      try {
-        const svg = this.renderer.getSVG(
-          src,
-          languages,
-          this.settings.style,
-          this.settings.scale
-        );
-
-        const rendered = createRenderedBlock(src, svg);
-
-        el.replaceWith(rendered);
-      } catch (error) {
-        el.createEl("div", {
-          text: `Error: ${error instanceof Error ? error.message : String(error)
-            }`,
-          cls: "scratchblocks-error",
-        });
+      if (!this.settings.showToolbar) {
+        el.replaceWith(svg);
+        return;
       }
-    };
 
-    this.registerMarkdownCodeBlockProcessor("scratchblock", processor);
-    this.registerMarkdownCodeBlockProcessor("scratchblocks", processor);
+      const rendered = createRenderedBlock(src, svg, {
+        app: this.app,
+        pngExportPath: this.settings.pngExportPath,
+        pngFilenameTemplate: this.settings.pngFilenameTemplate,
+        sourcePath: ctx.sourcePath,
+        svgText: this.renderSVGString(src),
+      });
 
-    this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
+      el.replaceWith(rendered);
+    } catch (error) {
+      el.createEl("div", {
+        text: `Error: ${this.formatError(error)}`,
+        cls: "scratchblocks-error",
+      });
+    }
+  }
+
+  private renderSVGString(src: string): string {
+    return this.renderer.getSVGString(
+      src,
+      this.getLanguages(),
+      this.settings.style,
+      this.settings.scale
+    );
+  }
+
+  private getLanguages(): LanguageCode[] {
+    return Array.from(
+      new Set<LanguageCode>([
+        this.settings.languageCode,
+        "en" as LanguageCode,
+      ])
+    );
+  }
+
+  private formatError(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
   }
 
   async loadSettings() {

@@ -16,20 +16,22 @@ export class SBRenderer {
     scale: number
   ): SVGElement {
     const doc = scratchblocks.parse(src, { languages });
-    const svg = scratchblocks.render(doc, { style });
-
-    return this.scaleSVG(svg, scale);
-  }
-
-  private scaleSVG(svg: SVGElement, scale: number): SVGElement {
-    const width = Number(svg.getAttribute("width"));
-    const height = Number(svg.getAttribute("height"));
-
-    if (!Number.isNaN(width) && !Number.isNaN(height)) {
-      svg.setAttribute("width", String(width * scale));
-      svg.setAttribute("height", String(height * scale));
-    }
+    const svg = scratchblocks.render(doc, { style, scale });
 
     return svg;
+  }
+
+  getSVGString(
+    src: string,
+    languages: LanguageCode[],
+    style: ScratchblocksStyle,
+    scale: number
+  ): string {
+    const doc = scratchblocks.parse(src, { languages });
+    const view = scratchblocks.newView(doc, { style, scale });
+
+    view.render();
+
+    return view.exportSVGString();
   }
 }
