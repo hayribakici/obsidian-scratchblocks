@@ -1,28 +1,25 @@
-import { normalizePath, Notice } from "obsidian";
+import { normalizePath } from "obsidian";
 import type { Editor, Vault } from "obsidian";
 import type { ScratchblocksPNGExportPath } from "./types";
 
-const SVG_MIME_TYPE = "image/svg+xml;charset=utf-8";
-const PNG_MIME_TYPE = "image/png";
-const DEFAULT_PNG_FILENAME = "scratchblocks.png";
 const SCRATCHBLOCKS_CODE_FENCE = /^`{3,}\s*scratchblocks?\b.*$/;
 const CODE_FENCE = /^`{3,}\s*$/;
 
-export async function copySourceAsSVG(
-    src: string,
-    renderSVGString: (src: string) => string
-) {
-    try {
-        await navigator.clipboard.writeText(renderSVGString(src));
-
-        new Notice("Copied Scratchblocks SVG");
-    } catch (error) {
-        new Notice(`Could not copy Scratchblocks SVG: ${formatError(error)}`);
-    }
+export interface PNGExportOptions {
+    firstLine: string;
+    filenameTemplate: string;
+    pngBlob: () => Promise<Blob>;
+    exportPath?: ScratchblocksPNGExportPath;
+    sourcePath?: string;
+    vault?: Vault;
 }
 
-function formatError(error: unknown): string {
+export function formatError(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+export async function copyTextToClipboard(text: string) {
+    await navigator.clipboard.writeText(text);
 }
 
 export function getScratchblocksSource(editor: Editor): string | null {
@@ -32,6 +29,10 @@ export function getScratchblocksSource(editor: Editor): string | null {
         return selection;
     }
 
+    return getScratchblocksFenceSource(editor);
+}
+
+export function getScratchblocksFenceSource(editor: Editor): string | null {
     const openingFence = findOpeningScratchblocksFence(
         editor,
         editor.getCursor().line
@@ -54,32 +55,12 @@ export function getScratchblocksSource(editor: Editor): string | null {
     return src || null;
 }
 
-export async function downloadSVGAsPNG(
-    svgText: string,
-    filename = DEFAULT_PNG_FILENAME,
-    options?: {
-        exportPath?: ScratchblocksPNGExportPath;
-        sourcePath?: string;
-        vault?: Vault;
-    }
-) {
-    const image = await loadSVGImage(svgText);
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-
-    if (!context) {
-        throw new Error("Could not create PNG canvas");
-    }
-
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-
-    context.drawImage(image, 0, 0);
-
-    const blob = await canvasToBlob(canvas);
+export async function exportScratchblocksPNG(options: PNGExportOptions) {
+    const blob = await options.pngBlob();
+    const filename = getPNGFilename(options.firstLine, options.filenameTemplate);
 
     if (
-        options?.exportPath === "current" &&
+        options.exportPath === "current" &&
         options.vault &&
         options.sourcePath
     ) {
@@ -95,62 +76,20 @@ export async function downloadSVGAsPNG(
     downloadBlob(blob, filename);
 }
 
-function findOpeningScratchblocksFence(editor: Editor, cursorLine: number): number {
-    let openingFence = -1;
-
-    for (let line = 0; line <= cursorLine; line++) {
-        const content = editor.getLine(line);
-
-        if (openingFence === -1 && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
-            openingFence = line;
-        } else if (openingFence !== -1 && CODE_FENCE.test(content)) {
-            openingFence = -1;
-        }
-    }
-
-    return openingFence;
+export function getFirstLine(src: string): string {
+    return src
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find(Boolean) || "";
 }
 
-function findClosingFence(editor: Editor, startLine: number): number {
-    for (let line = startLine; line < editor.lineCount(); line++) {
-        if (CODE_FENCE.test(editor.getLine(line))) {
-            return line;
-        }
-    }
+function getPNGFilename(firstLine: string, template: string): string {
+    const filename = (template || "scratchblocks_{firstLine}")
+        .replaceAll("{firstLine}", firstLine || "block")
+        .replaceAll("{datetime}", getFilenameDateTime());
+    const sanitized = sanitizeFilenamePart(filename) || "scratchblocks";
 
-    return -1;
-}
-
-function loadSVGImage(svgText: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-        const blob = new Blob([svgText], { type: SVG_MIME_TYPE });
-        const url = URL.createObjectURL(blob);
-        const image = new Image();
-
-        image.addEventListener("load", () => {
-            URL.revokeObjectURL(url);
-            resolve(image);
-        });
-
-        image.addEventListener("error", () => {
-            URL.revokeObjectURL(url);
-            reject(new Error("Could not load SVG for PNG export"));
-        });
-
-        image.src = url;
-    });
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(blob);
-            } else {
-                reject(new Error("Could not create PNG"));
-            }
-        }, PNG_MIME_TYPE);
-    });
+    return `${sanitized}.png`;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -179,6 +118,32 @@ async function saveBlobToSourceFolder(
     await vault.createBinary(targetPath, await blob.arrayBuffer());
 }
 
+function findOpeningScratchblocksFence(editor: Editor, cursorLine: number): number {
+    let openingFence = -1;
+
+    for (let line = 0; line <= cursorLine; line++) {
+        const content = editor.getLine(line);
+
+        if (openingFence === -1 && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
+            openingFence = line;
+        } else if (openingFence !== -1 && CODE_FENCE.test(content)) {
+            openingFence = -1;
+        }
+    }
+
+    return openingFence;
+}
+
+function findClosingFence(editor: Editor, startLine: number): number {
+    for (let line = startLine; line < editor.lineCount(); line++) {
+        if (CODE_FENCE.test(editor.getLine(line))) {
+            return line;
+        }
+    }
+
+    return -1;
+}
+
 function getParentPath(path: string): string {
     const lastSlash = path.lastIndexOf("/");
 
@@ -202,4 +167,26 @@ function getUniqueVaultPath(vault: Vault, path: string): string {
     }
 
     return candidate;
+}
+
+function getFilenameDateTime(): string {
+    const now = new Date();
+    const pad = (value: number) => String(value).padStart(2, "0");
+
+    return [
+        now.getFullYear(),
+        pad(now.getMonth() + 1),
+        pad(now.getDate()),
+    ].join("-") + "_" + [
+        pad(now.getHours()),
+        pad(now.getMinutes()),
+        pad(now.getSeconds()),
+    ].join("-");
+}
+
+function sanitizeFilenamePart(value: string): string {
+    return value
+        .replace(/[\\/:*?"<>|]/g, "")
+        .replace(/\s+/g, "_")
+        .slice(0, 80);
 }

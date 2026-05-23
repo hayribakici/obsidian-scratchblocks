@@ -3,11 +3,23 @@ import scratchblocks from "scratchblocks";
 
 import { ScratchblocksSettingTab } from "./settings";
 import { SBRenderer } from "./renderer";
-import { copySourceAsSVG, getScratchblocksSource } from "./commands";
+import {
+  copyTextToClipboard,
+  exportScratchblocksPNG,
+  formatError,
+  getFirstLine,
+  getScratchblocksFenceSource,
+  getScratchblocksSource,
+} from "./commands";
 import { createRenderedBlock } from "./rendered-block";
 
 import type { LanguageCode, ScratchblocksSettings } from "./types";
-import type { MarkdownPostProcessorContext } from "obsidian";
+import type {
+  MarkdownFileInfo,
+  MarkdownPostProcessorContext,
+  Menu,
+} from "obsidian";
+import type { PNGExportOptions } from "./commands";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
   languageCode: "en" as LanguageCode,
@@ -22,10 +34,6 @@ export default class ScratchblocksPlugin extends Plugin {
   settings: ScratchblocksSettings;
   renderer: SBRenderer;
 
-  get language() {
-    return scratchblocks.allLanguages[this.settings.languageCode];
-  }
-
   async onload() {
     this.renderer = new SBRenderer();
 
@@ -34,6 +42,7 @@ export default class ScratchblocksPlugin extends Plugin {
 
     this.registerScratchblocksProcessors();
     this.registerCommands();
+    this.registerEditorMenu();
     this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
   }
 
@@ -58,12 +67,54 @@ export default class ScratchblocksPlugin extends Plugin {
         }
 
         if (!checking) {
-          void copySourceAsSVG(src, (source) => this.renderSVGString(source));
+          void copyTextToClipboard(this.renderSVGString(src));
         }
 
         return true;
       },
     });
+  }
+
+  private registerEditorMenu() {
+    this.registerEvent(
+      this.app.workspace.on("editor-menu", (menu, editor, info) => {
+        const src = getScratchblocksFenceSource(editor);
+
+        if (!src) {
+          return;
+        }
+
+        this.addScratchblocksEditorMenuItems(menu, info, src);
+      })
+    );
+  }
+
+  private addScratchblocksEditorMenuItems(
+    menu: Menu,
+    info: MarkdownView | MarkdownFileInfo,
+    src: string
+  ) {
+    menu.addSeparator();
+
+    menu.addItem((item) =>
+      item
+        .setTitle("Copy Scratchblocks SVG")
+        .setIcon("file-code")
+        .onClick(() => {
+          void copyTextToClipboard(this.renderSVGString(src));
+        })
+    );
+
+    menu.addItem((item) =>
+      item
+        .setTitle("Export Scratchblocks PNG")
+        .setIcon("download")
+        .onClick(async () => {
+          await exportScratchblocksPNG(
+            this.getPNGExportOptions(src, info.file?.path)
+          );
+        })
+    );
   }
 
   private renderScratchblocksCodeBlock(
@@ -74,28 +125,21 @@ export default class ScratchblocksPlugin extends Plugin {
     try {
       const svg = this.renderer.getSVG(
         src,
-        this.getLanguages(),
+        this.getAllLanguages(),
         this.settings.style,
         this.settings.scale
       );
 
-      if (!this.settings.showToolbar) {
-        el.replaceWith(svg);
-        return;
-      }
-
       const rendered = createRenderedBlock(src, svg, {
-        app: this.app,
-        pngExportPath: this.settings.pngExportPath,
-        pngFilenameTemplate: this.settings.pngFilenameTemplate,
-        sourcePath: ctx.sourcePath,
+        ...this.getPNGExportOptions(src, ctx.sourcePath),
+        showToolbar: this.settings.showToolbar,
         svgText: this.renderSVGString(src),
       });
 
       el.replaceWith(rendered);
     } catch (error) {
       el.createEl("div", {
-        text: `Error: ${this.formatError(error)}`,
+        text: `Error: ${formatError(error)}`,
         cls: "scratchblocks-error",
       });
     }
@@ -104,23 +148,42 @@ export default class ScratchblocksPlugin extends Plugin {
   private renderSVGString(src: string): string {
     return this.renderer.getSVGString(
       src,
-      this.getLanguages(),
+      this.getAllLanguages(),
       this.settings.style,
       this.settings.scale
     );
   }
 
-  private getLanguages(): LanguageCode[] {
+  private renderPNGBlob(src: string): Promise<Blob> {
+    return this.renderer.getPNGBlob(
+      src,
+      this.getAllLanguages(),
+      this.settings.style,
+      this.settings.scale
+    );
+  }
+
+  private getPNGExportOptions(
+    src: string,
+    sourcePath?: string
+  ): PNGExportOptions {
+    return {
+      exportPath: this.settings.pngExportPath,
+      filenameTemplate: this.settings.pngFilenameTemplate,
+      firstLine: getFirstLine(src),
+      pngBlob: () => this.renderPNGBlob(src),
+      sourcePath,
+      vault: this.app.vault,
+    };
+  }
+
+  private getAllLanguages(): LanguageCode[] {
     return Array.from(
       new Set<LanguageCode>([
         this.settings.languageCode,
         "en" as LanguageCode,
       ])
     );
-  }
-
-  private formatError(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
   }
 
   async loadSettings() {

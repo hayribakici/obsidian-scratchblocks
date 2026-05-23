@@ -2,7 +2,12 @@ import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
 import type { LanguageCode, ScratchblocksStyle } from "./types";
 
-// Helper class that renders the scratch code into svg
+interface ScratchblocksView {
+  render(): SVGElement;
+  exportSVGString(): string;
+  exportPNG(callback: (url: string) => void, scale?: number): void;
+}
+
 export class SBRenderer {
   load() {
     scratchblocks.loadLanguages(allLanguages);
@@ -15,10 +20,10 @@ export class SBRenderer {
     style: ScratchblocksStyle,
     scale: number
   ): SVGElement {
-    const doc = scratchblocks.parse(src, { languages });
-    const svg = scratchblocks.render(doc, { style, scale });
-
-    return svg;
+    return scratchblocks.render(scratchblocks.parse(src, { languages }), {
+      style,
+      scale,
+    });
   }
 
   getSVGString(
@@ -27,11 +32,48 @@ export class SBRenderer {
     style: ScratchblocksStyle,
     scale: number
   ): string {
-    const doc = scratchblocks.parse(src, { languages });
-    const view = scratchblocks.newView(doc, { style, scale });
+    const view = this.getView(src, languages, style, scale);
 
     view.render();
 
     return view.exportSVGString();
+  }
+
+  async getPNGBlob(
+    src: string,
+    languages: LanguageCode[],
+    style: ScratchblocksStyle,
+    scale: number
+  ): Promise<Blob> {
+    const view = this.getView(src, languages, style, scale);
+
+    view.render();
+
+    return new Promise((resolve, reject) => {
+      view.exportPNG(async (url: string) => {
+        try {
+          const response = await fetch(url);
+
+          resolve(await response.blob());
+        } catch (error) {
+          reject(error);
+        } finally {
+          if (url.startsWith("blob:")) {
+            URL.revokeObjectURL(url);
+          }
+        }
+      });
+    });
+  }
+
+  private getView(
+    src: string,
+    languages: LanguageCode[],
+    style: ScratchblocksStyle,
+    scale: number
+  ): ScratchblocksView {
+    const doc = scratchblocks.parse(src, { languages });
+
+    return scratchblocks.newView(doc, { style, scale });
   }
 }
