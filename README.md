@@ -14,6 +14,8 @@ will be rendered as:
 
 Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) on how to write Scratch code.
 
+Both `scratchblock` and `scratchblocks` code fences are supported.
+
 ## Under the hood
 
 It exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
