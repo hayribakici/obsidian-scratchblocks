@@ -1,10 +1,11 @@
 import { Menu, setIcon } from "obsidian";
 import { copyTextToClipboard, exportScratchblocksPNG } from "./commands";
-import type { PNGExportOptions } from "./commands";
+import type { ExportOptions } from "./commands";
 
-interface RenderedBlockOptions extends PNGExportOptions {
+interface RenderedBlockOptions extends ExportOptions {
     showToolbar: boolean;
     svgText: string;
+    exportAllPNG?: () => Promise<void>;
 }
 
 export function createRenderedBlock(
@@ -150,6 +151,17 @@ function addRenderedBlockContextMenuItems(
                 await exportScratchblocksPNG(options);
             })
     );
+
+    if (options.exportAllPNG) {
+        menu.addItem((item) =>
+            item
+                .setTitle("Export all Scratchblocks to png")
+                .setIcon("download")
+                .onClick(async () => {
+                    await options.exportAllPNG();
+                })
+        );
+    }
 
     menu.addItem((item) =>
         item

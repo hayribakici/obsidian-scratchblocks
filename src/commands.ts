@@ -2,10 +2,9 @@ import { normalizePath } from "obsidian";
 import type { Editor, Vault } from "obsidian";
 import type { ScratchblocksPNGExportPath } from "./types";
 
-const SCRATCHBLOCKS_CODE_FENCE = /^`{3,}\s*scratchblocks?\b.*$/;
-const CODE_FENCE = /^`{3,}\s*$/;
+const SCRATCHBLOCKS_CODE_FENCE = /^(`{3,}|~{3,})\s*scratchblocks?\b.*$/;
 
-export interface PNGExportOptions {
+export interface ExportOptions {
     firstLine: string;
     filenameTemplate: string;
     pngBlob: () => Promise<Blob>;
@@ -55,25 +54,56 @@ export function getScratchblocksFenceSource(editor: Editor): string | null {
     return src || null;
 }
 
-export async function exportScratchblocksPNG(options: PNGExportOptions) {
+export async function exportScratchblocksPNG(options: ExportOptions) {
     const blob = await options.pngBlob();
-    const filename = getPNGFilename(options.firstLine, options.filenameTemplate);
+    await exportPNGBlob(blob, options);
+}
 
-    if (
-        options.exportPath === "current" &&
-        options.vault &&
-        options.sourcePath
-    ) {
-        await saveBlobToSourceFolder(
-            blob,
-            filename,
-            options.vault,
-            options.sourcePath
-        );
-        return;
+export async function exportAllScratchblocksPNG(options: ExportOptions[]) {
+    for (const option of options) {
+        const blob = await option.pngBlob();
+        await exportPNGBlob(blob, option);
+    }
+}
+
+export function getAllScratchblocksSources(editor: Editor): string[] {
+    return getAllScratchblocksSourcesFromText(editor.getValue());
+}
+
+export function getAllScratchblocksSourcesFromText(text: string): string[] {
+    const sources: string[] = [];
+    let fence = "";
+    let sourceStartLine = -1;
+    const lines = text.split(/\r?\n/);
+
+    for (let line = 0; line < lines.length; line++) {
+        const content = lines[line];
+
+        if (!fence) {
+            fence = getFenceMarker(content);
+
+            if (fence && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
+                sourceStartLine = line + 1;
+            }
+
+            continue;
+        }
+
+        if (isClosingFence(content, fence)) {
+            if (sourceStartLine !== -1) {
+                const src = lines.slice(sourceStartLine, line).join("\n").trim();
+
+                if (src) {
+                    sources.push(src);
+                }
+            }
+
+            fence = "";
+            sourceStartLine = -1;
+        }
     }
 
-    downloadBlob(blob, filename);
+    return sources;
 }
 
 export function getFirstLine(src: string): string {
@@ -118,15 +148,45 @@ async function saveBlobToSourceFolder(
     await vault.createBinary(targetPath, await blob.arrayBuffer());
 }
 
+async function exportPNGBlob(blob: Blob, options: ExportOptions) {
+    const filename = getPNGFilename(options.firstLine, options.filenameTemplate);
+
+    if (
+        options.exportPath === "current" &&
+        options.vault &&
+        options.sourcePath
+    ) {
+        await saveBlobToSourceFolder(
+            blob,
+            filename,
+            options.vault,
+            options.sourcePath
+        );
+        return;
+    }
+
+    downloadBlob(blob, filename);
+}
+
 function findOpeningScratchblocksFence(editor: Editor, cursorLine: number): number {
+    let fence = "";
     let openingFence = -1;
 
     for (let line = 0; line <= cursorLine; line++) {
         const content = editor.getLine(line);
 
-        if (openingFence === -1 && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
-            openingFence = line;
-        } else if (openingFence !== -1 && CODE_FENCE.test(content)) {
+        if (!fence) {
+            fence = getFenceMarker(content);
+
+            if (fence && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
+                openingFence = line;
+            }
+
+            continue;
+        }
+
+        if (isClosingFence(content, fence)) {
+            fence = "";
             openingFence = -1;
         }
     }
@@ -135,13 +195,39 @@ function findOpeningScratchblocksFence(editor: Editor, cursorLine: number): numb
 }
 
 function findClosingFence(editor: Editor, startLine: number): number {
+    const fence = getFenceMarker(editor.getLine(startLine - 1));
+
+    if (!fence) {
+        return -1;
+    }
+
     for (let line = startLine; line < editor.lineCount(); line++) {
-        if (CODE_FENCE.test(editor.getLine(line))) {
+        if (isClosingFence(editor.getLine(line), fence)) {
             return line;
         }
     }
 
     return -1;
+}
+
+function getFenceMarker(line: string): string {
+    if (/^`{3,}/.test(line)) {
+        return "`";
+    }
+
+    if (/^~{3,}/.test(line)) {
+        return "~";
+    }
+
+    return "";
+}
+
+function isClosingFence(line: string, fence: string): boolean {
+    if (fence === "`") {
+        return /^`{3,}\s*$/.test(line);
+    }
+
+    return /^~{3,}\s*$/.test(line);
 }
 
 function getParentPath(path: string): string {

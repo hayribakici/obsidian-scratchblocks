@@ -1,12 +1,15 @@
-import { MarkdownView, Plugin } from "obsidian";
+import { MarkdownView, Notice, Plugin, TFile } from "obsidian";
 import scratchblocks from "scratchblocks";
 
 import { ScratchblocksSettingTab } from "./settings";
 import { SBRenderer } from "./renderer";
 import {
   copyTextToClipboard,
+  exportAllScratchblocksPNG as exportScratchblocksPNGFiles,
   exportScratchblocksPNG,
   formatError,
+  getAllScratchblocksSources,
+  getAllScratchblocksSourcesFromText,
   getFirstLine,
   getScratchblocksFenceSource,
   getScratchblocksSource,
@@ -19,7 +22,7 @@ import type {
   MarkdownPostProcessorContext,
   Menu,
 } from "obsidian";
-import type { PNGExportOptions } from "./commands";
+import type { ExportOptions } from "./commands";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
   languageCode: "en" as LanguageCode,
@@ -73,18 +76,37 @@ export default class ScratchblocksPlugin extends Plugin {
         return true;
       },
     });
+
+    this.addCommand({
+      id: "export-all-png",
+      name: "Export all Scratchblocks to png",
+      editorCheckCallback: (checking, editor, info) => {
+        const sources = getAllScratchblocksSources(editor);
+
+        if (!sources.length) {
+          return false;
+        }
+
+        if (!checking) {
+          void this.exportAllScratchblocksPNG(sources, info.file?.path);
+        }
+
+        return true;
+      },
+    });
   }
 
   private registerEditorMenu() {
     this.registerEvent(
       this.app.workspace.on("editor-menu", (menu, editor, info) => {
         const src = getScratchblocksFenceSource(editor);
+        const sources = getAllScratchblocksSources(editor);
 
-        if (!src) {
+        if (!src && !sources.length) {
           return;
         }
 
-        this.addScratchblocksEditorMenuItems(menu, info, src);
+        this.addScratchblocksEditorMenuItems(menu, info, src, sources);
       })
     );
   }
@@ -92,29 +114,43 @@ export default class ScratchblocksPlugin extends Plugin {
   private addScratchblocksEditorMenuItems(
     menu: Menu,
     info: MarkdownView | MarkdownFileInfo,
-    src: string
+    src: string | null,
+    sources: string[]
   ) {
     menu.addSeparator();
 
-    menu.addItem((item) =>
-      item
-        .setTitle("Copy Scratchblocks SVG")
-        .setIcon("file-code")
-        .onClick(() => {
-          void copyTextToClipboard(this.renderSVGString(src));
-        })
-    );
+    if (src) {
+      menu.addItem((item) =>
+        item
+          .setTitle("Copy Scratchblocks svg")
+          .setIcon("file-code")
+          .onClick(() => {
+            void copyTextToClipboard(this.renderSVGString(src));
+          })
+      );
 
-    menu.addItem((item) =>
-      item
-        .setTitle("Export Scratchblocks PNG")
-        .setIcon("download")
-        .onClick(async () => {
-          await exportScratchblocksPNG(
-            this.getPNGExportOptions(src, info.file?.path)
-          );
-        })
-    );
+      menu.addItem((item) =>
+        item
+          .setTitle("Export Scratchblocks to png")
+          .setIcon("download")
+          .onClick(async () => {
+            await exportScratchblocksPNG(
+              this.getPNGExportOptions(src, info.file?.path)
+            );
+          })
+      );
+    }
+
+    if (sources.length) {
+      menu.addItem((item) =>
+        item
+          .setTitle("Export all Scratchblocks to png")
+          .setIcon("download")
+          .onClick(async () => {
+            await this.exportAllScratchblocksPNG(sources, info.file?.path);
+          })
+      );
+    }
   }
 
   private renderScratchblocksCodeBlock(
@@ -132,6 +168,7 @@ export default class ScratchblocksPlugin extends Plugin {
 
       const rendered = createRenderedBlock(src, svg, {
         ...this.getPNGExportOptions(src, ctx.sourcePath),
+        exportAllPNG: () => this.exportAllScratchblocksPNGFromFile(ctx.sourcePath),
         showToolbar: this.settings.showToolbar,
         svgText: this.renderSVGString(src),
       });
@@ -163,10 +200,38 @@ export default class ScratchblocksPlugin extends Plugin {
     );
   }
 
+  private async exportAllScratchblocksPNG(
+    sources: string[],
+    sourcePath?: string
+  ) {
+    try {
+      await exportScratchblocksPNGFiles(
+        sources.map((src) => this.getPNGExportOptions(src, sourcePath))
+      );
+    } catch (error) {
+      new Notice(`Scratchblocks PNG export failed: ${formatError(error)}`);
+    }
+  }
+
+  private async exportAllScratchblocksPNGFromFile(sourcePath: string) {
+    const file = this.app.vault.getAbstractFileByPath(sourcePath);
+
+    if (!(file instanceof TFile)) {
+      return;
+    }
+
+    const markdown = await this.app.vault.cachedRead(file);
+    const sources = getAllScratchblocksSourcesFromText(markdown);
+
+    if (sources.length) {
+      await this.exportAllScratchblocksPNG(sources, sourcePath);
+    }
+  }
+
   private getPNGExportOptions(
     src: string,
     sourcePath?: string
-  ): PNGExportOptions {
+  ): ExportOptions {
     return {
       exportPath: this.settings.pngExportPath,
       filenameTemplate: this.settings.pngFilenameTemplate,
