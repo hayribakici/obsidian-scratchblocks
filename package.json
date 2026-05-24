@@ -6,11 +6,13 @@
   "license": "MIT",
   "scripts": {
     "build": "obsidian-plugin build src/main.ts",
-    "dev": "obsidian-plugin dev src/main.ts"
+    "dev": "obsidian-plugin dev src/main.ts",
+    "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.35.1",
     "@typescript-eslint/parser": "^5.35.1",
+    "esbuild": "^0.8.57",
     "eslint": "^8.22.0",
     "obsidian": "obsidianmd/obsidian-api",
     "obsidian-plugin-cli": "^0.4.5",

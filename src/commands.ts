@@ -1,8 +1,5 @@
-import { normalizePath } from "obsidian";
 import type { Editor, Vault } from "obsidian";
 import type { ScratchblocksPNGExportPath } from "./types";
-
-const SCRATCHBLOCKS_CODE_FENCE = /^(`{3,}|~{3,})\s*scratchblocks?\b.*$/;
 
 export interface ExportOptions {
     firstLine: string;
@@ -72,24 +69,24 @@ export function getAllScratchblocksSources(editor: Editor): string[] {
 
 export function getAllScratchblocksSourcesFromText(text: string): string[] {
     const sources: string[] = [];
-    let fence = "";
+    let fenceMarker = "";
     let sourceStartLine = -1;
     const lines = text.split(/\r?\n/);
 
     for (let line = 0; line < lines.length; line++) {
         const content = lines[line];
 
-        if (!fence) {
-            fence = getFenceMarker(content);
+        if (!fenceMarker) {
+            fenceMarker = getFenceMarker(content);
 
-            if (fence && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
+            if (fenceMarker && isScratchblocksFence(content)) {
                 sourceStartLine = line + 1;
             }
 
             continue;
         }
 
-        if (isClosingFence(content, fence)) {
+        if (isClosingFence(content, fenceMarker)) {
             if (sourceStartLine !== -1) {
                 const src = lines.slice(sourceStartLine, line).join("\n").trim();
 
@@ -98,7 +95,7 @@ export function getAllScratchblocksSourcesFromText(text: string): string[] {
                 }
             }
 
-            fence = "";
+            fenceMarker = "";
             sourceStartLine = -1;
         }
     }
@@ -142,7 +139,7 @@ async function saveBlobToSourceFolder(
     const parentPath = getParentPath(sourcePath);
     const targetPath = getUniqueVaultPath(
         vault,
-        normalizePath(parentPath ? `${parentPath}/${filename}` : filename)
+        normalizeVaultPath(parentPath ? `${parentPath}/${filename}` : filename)
     );
 
     await vault.createBinary(targetPath, await blob.arrayBuffer());
@@ -169,24 +166,24 @@ async function exportPNGBlob(blob: Blob, options: ExportOptions) {
 }
 
 function findOpeningScratchblocksFence(editor: Editor, cursorLine: number): number {
-    let fence = "";
+    let fenceMarker = "";
     let openingFence = -1;
 
     for (let line = 0; line <= cursorLine; line++) {
         const content = editor.getLine(line);
 
-        if (!fence) {
-            fence = getFenceMarker(content);
+        if (!fenceMarker) {
+            fenceMarker = getFenceMarker(content);
 
-            if (fence && SCRATCHBLOCKS_CODE_FENCE.test(content)) {
+            if (fenceMarker && isScratchblocksFence(content)) {
                 openingFence = line;
             }
 
             continue;
         }
 
-        if (isClosingFence(content, fence)) {
-            fence = "";
+        if (isClosingFence(content, fenceMarker)) {
+            fenceMarker = "";
             openingFence = -1;
         }
     }
@@ -195,14 +192,14 @@ function findOpeningScratchblocksFence(editor: Editor, cursorLine: number): numb
 }
 
 function findClosingFence(editor: Editor, startLine: number): number {
-    const fence = getFenceMarker(editor.getLine(startLine - 1));
+    const fenceMarker = getFenceMarker(editor.getLine(startLine - 1));
 
-    if (!fence) {
+    if (!fenceMarker) {
         return -1;
     }
 
     for (let line = startLine; line < editor.lineCount(); line++) {
-        if (isClosingFence(editor.getLine(line), fence)) {
+        if (isClosingFence(editor.getLine(line), fenceMarker)) {
             return line;
         }
     }
@@ -211,29 +208,52 @@ function findClosingFence(editor: Editor, startLine: number): number {
 }
 
 function getFenceMarker(line: string): string {
-    if (/^`{3,}/.test(line)) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
         return "`";
     }
 
-    if (/^~{3,}/.test(line)) {
+    if (trimmed.startsWith("~~~")) {
         return "~";
     }
 
     return "";
 }
 
-function isClosingFence(line: string, fence: string): boolean {
-    if (fence === "`") {
-        return /^`{3,}\s*$/.test(line);
+function isClosingFence(line: string, fenceMarker: string): boolean {
+    const trimmed = line.trim();
+
+    if (fenceMarker === "`") {
+        return trimmed === "```";
     }
 
-    return /^~{3,}\s*$/.test(line);
+    if (fenceMarker === "~") {
+        return trimmed === "~~~";
+    }
+
+    return false;
+}
+
+function isScratchblocksFence(line: string): boolean {
+    const trimmed = line.trim().toLowerCase();
+
+    return [
+        "```scratchblock",
+        "```scratchblocks",
+        "~~~scratchblock",
+        "~~~scratchblocks",
+    ].includes(trimmed);
 }
 
 function getParentPath(path: string): string {
     const lastSlash = path.lastIndexOf("/");
 
     return lastSlash === -1 ? "" : path.slice(0, lastSlash);
+}
+
+function normalizeVaultPath(path: string): string {
+    return path.replace(/\\/g, "/").replace(/\/+/g, "/");
 }
 
 function getUniqueVaultPath(vault: Vault, path: string): string {
