@@ -1,10 +1,13 @@
 import { Menu, setIcon } from "obsidian";
-import { copyTextToClipboard, exportScratchblocksPNG } from "./commands";
+import {
+    copyPNGBlobToClipboard,
+    exportScratchblocksPNG,
+    exportScratchblocksSVG,
+} from "./commands";
 import type { ExportOptions } from "./commands";
 
 interface RenderedBlockOptions extends ExportOptions {
     showToolbar: boolean;
-    svgText: string;
     exportAllPNG?: () => Promise<void>;
 }
 
@@ -15,29 +18,20 @@ export function createRenderedBlock(
 ): HTMLElement {
     const container = createDiv({
         cls: "scratchblocks-rendered",
-        attr: {
-            dir: "ltr",
-        },
     });
-
-    const width = svg.getAttribute("width");
-
-    if (width) {
-        container.style.width = `${width}px`;
-    }
 
     if (options.showToolbar) {
         const toolbar = container.createDiv({
-            cls: "scratchblocks-toolbar",
+            cls: "scratchblocks-actions",
         });
 
-        appendCopySvgButtonToToolbar(toolbar, options.svgText);
+        appendCopyPngButtonToToolbar(toolbar, options);
+        appendDownloadSvgButtonToToolbar(toolbar, options);
         appendDownloadPngButtonToToolbar(toolbar, options);
-        appendCopySourceButtonToToolbar(toolbar, src);
     }
 
     container.addEventListener("contextmenu", (event) => {
-        addRenderedBlockContextMenuItems(event, src, options);
+        addRenderedBlockContextMenuItems(event, options);
     });
 
     container.appendChild(svg);
@@ -45,50 +39,37 @@ export function createRenderedBlock(
     return container;
 }
 
-function appendCopySourceButtonToToolbar(toolbar: HTMLDivElement, src: string) {
-    const copySourceButton = toolbar.createEl("button", {
+function appendCopyPngButtonToToolbar(
+    toolbar: HTMLDivElement,
+    options: RenderedBlockOptions
+) {
+    const copyPngButton = toolbar.createEl("button", {
         cls: "scratchblocks-copy-button",
         attr: {
-            "aria-label": "Copy Scratchblocks source",
-            title: "Copy Scratchblocks source",
+            "aria-label": "Copy png image"
         },
     });
 
-    setIcon(copySourceButton, "copy");
+    setIcon(copyPngButton, "copy");
 
-    copySourceButton.addEventListener("click", async () => {
-        await copyTextToClipboard(src);
+    copyPngButton.addEventListener("click", async () => {
+        try {
+            await copyPNGBlobToClipboard(await options.pngBlob());
 
-        setIcon(copySourceButton, "check");
+            setIcon(copyPngButton, "check");
 
-        window.setTimeout(() => {
-            setIcon(copySourceButton, "copy");
-        }, 1200);
+            window.setTimeout(() => {
+                setIcon(copyPngButton, "copy");
+            }, 1200);
+        } catch {       
+            setIcon(copyPngButton, "x");
+
+            window.setTimeout(() => {
+                setIcon(copyPngButton, "copy");
+            }, 1200);
+        }
     });
-    return copySourceButton;
-}
-
-function appendCopySvgButtonToToolbar(toolbar: HTMLDivElement, svgText: string) {
-    const copySvgButton = toolbar.createEl("button", {
-        cls: "scratchblocks-copy-button",
-        attr: {
-            "aria-label": "Copy SVG source",
-            title: "Copy SVG source",
-        },
-    });
-
-    setIcon(copySvgButton, "file-code");
-
-    copySvgButton.addEventListener("click", async () => {
-        await copyTextToClipboard(svgText);
-
-        setIcon(copySvgButton, "check");
-
-        window.setTimeout(() => {
-            setIcon(copySvgButton, "file-code");
-        }, 1200);
-    });
-    return copySvgButton;
+    return copyPngButton;
 }
 
 function appendDownloadPngButtonToToolbar(
@@ -98,12 +79,11 @@ function appendDownloadPngButtonToToolbar(
     const downloadPngButton = toolbar.createEl("button", {
         cls: "scratchblocks-copy-button",
         attr: {
-            "aria-label": "Download PNG",
-            title: "Download PNG",
+            "aria-label": "Download png",
         },
     });
 
-    setIcon(downloadPngButton, "download");
+    setIcon(downloadPngButton, "image-down");
 
     downloadPngButton.addEventListener("click", async () => {
         try {
@@ -112,22 +92,54 @@ function appendDownloadPngButtonToToolbar(
             setIcon(downloadPngButton, "check");
 
             window.setTimeout(() => {
-                setIcon(downloadPngButton, "download");
+                setIcon(downloadPngButton, "image-down");
             }, 1200);
         } catch {
             setIcon(downloadPngButton, "x");
 
             window.setTimeout(() => {
-                setIcon(downloadPngButton, "download");
+                setIcon(downloadPngButton, "image-down");
             }, 1200);
         }
     });
     return downloadPngButton;
 }
 
+function appendDownloadSvgButtonToToolbar(
+    toolbar: HTMLDivElement,
+    options: RenderedBlockOptions
+) {
+    const downloadSvgButton = toolbar.createEl("button", {
+        cls: "scratchblocks-copy-button",
+        attr: {
+            "aria-label": "Download svg",
+        },
+    });
+
+    setIcon(downloadSvgButton, "file-down");
+
+    downloadSvgButton.addEventListener("click", async () => {
+        try {
+            await exportScratchblocksSVG(options);
+
+            setIcon(downloadSvgButton, "check");
+
+            window.setTimeout(() => {
+                setIcon(downloadSvgButton, "file-down");
+            }, 1200);
+        } catch {
+            setIcon(downloadSvgButton, "x");
+
+            window.setTimeout(() => {
+                setIcon(downloadSvgButton, "file-down");
+            }, 1200);
+        }
+    });
+    return downloadSvgButton;
+}
+
 function addRenderedBlockContextMenuItems(
     event: MouseEvent,
-    src: string,
     options: RenderedBlockOptions
 ) {
     const menu = Menu.forEvent(event);
@@ -136,17 +148,28 @@ function addRenderedBlockContextMenuItems(
 
     menu.addItem((item) =>
         item
-            .setTitle("Copy Scratchblocks SVG")
+            .setTitle("Copy Scratchblocks png")
+            .setIcon("image")
+            .onClick(async () => {
+                await copyPNGBlobToClipboard(await options.pngBlob());
+            })
+    );
+
+    menu.addSeparator();
+
+    menu.addItem((item) =>
+        item
+            .setTitle("Export Scratchblocks to svg")
             .setIcon("file-code")
             .onClick(async () => {
-                await copyTextToClipboard(options.svgText);
+                await exportScratchblocksSVG(options);
             })
     );
 
     menu.addItem((item) =>
         item
-            .setTitle("Export Scratchblocks PNG")
-            .setIcon("download")
+            .setTitle("Export Scratchblocks to png")
+            .setIcon("image-down")
             .onClick(async () => {
                 await exportScratchblocksPNG(options);
             })
@@ -163,12 +186,4 @@ function addRenderedBlockContextMenuItems(
         );
     }
 
-    menu.addItem((item) =>
-        item
-            .setTitle("Copy Scratchblocks source")
-            .setIcon("copy")
-            .onClick(async () => {
-                await copyTextToClipboard(src);
-            })
-    );
 }

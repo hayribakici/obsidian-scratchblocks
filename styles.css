@@ -1,21 +1,37 @@
 .scratchblocks-rendered {
+    position: relative;
     display: inline-block;
-    direction: ltr;
+
     unicode-bidi: isolate;
 }
 
 .scratchblocks-rendered svg {
     display: block;
+    direction: ltr;
+    unicode-bidi: isolate;
 }
 
-.scratchblocks-toolbar {
+.scratchblocks-actions {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 28px;
+    z-index: 1;
+
     display: flex;
-    justify-content: flex-end;
-    gap: 4px;
-    margin-block-end: 6px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 6px;
+
+    opacity: 0;
+    pointer-events: none;
 
     direction: ltr;
     unicode-bidi: isolate;
+}
+
+.scratchblocks-rendered:hover .scratchblocks-actions {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .scratchblocks-copy-button {
@@ -23,14 +39,14 @@
     align-items: center;
     justify-content: center;
 
-    width: 28px;
-    height: 28px;
-    padding: 4px;
+    width: 22px;
+    height: 22px;
+    padding: 2px;
 
     cursor: pointer;
 }
 
 .scratchblocks-copy-button svg {
-    width: 16px;
-    height: 16px;
+    width: 13px;
+    height: 13px;
 }

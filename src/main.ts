@@ -4,15 +4,17 @@ import scratchblocks from "scratchblocks";
 import { ScratchblocksSettingTab } from "./settings";
 import { SBRenderer } from "./renderer";
 import {
-  copyTextToClipboard,
+  copyPNGBlobToClipboard,
   exportAllScratchblocksPNG as exportScratchblocksPNGFiles,
   exportScratchblocksPNG,
+  exportScratchblocksSVG,
   formatError,
   getAllScratchblocksSources,
   getAllScratchblocksSourcesFromText,
   getFirstLine,
   getScratchblocksFenceSource,
   getScratchblocksSource,
+  SVG_MIME_TYPE,
 } from "./commands";
 import { createRenderedBlock } from "./rendered-block";
 
@@ -61,7 +63,7 @@ export default class ScratchblocksPlugin extends Plugin {
   private registerCommands() {
     this.addCommand({
       id: "scratchblocks-copy-svg",
-      name: "Copy Scratchblocks SVG",
+      name: "Copy Scratchblocks png",
       editorCheckCallback: (checking, editor) => {
         const src = getScratchblocksSource(editor);
 
@@ -70,7 +72,7 @@ export default class ScratchblocksPlugin extends Plugin {
         }
 
         if (!checking) {
-          void copyTextToClipboard(this.renderSVGString(src));
+          void this.copyScratchblocksPNG(src);
         }
 
         return true;
@@ -89,6 +91,24 @@ export default class ScratchblocksPlugin extends Plugin {
 
         if (!checking) {
           void this.exportAllScratchblocksPNG(sources, info.file?.path);
+        }
+
+        return true;
+      },
+    });
+
+    this.addCommand({
+      id: "export-svg",
+      name: "Export Scratchblocks to svg",
+      editorCheckCallback: (checking, editor, info) => {
+        const src = getScratchblocksSource(editor);
+
+        if (!src) {
+          return false;
+        }
+
+        if (!checking) {
+          void this.exportScratchblocksSVG(src, info.file?.path);
         }
 
         return true;
@@ -122,10 +142,19 @@ export default class ScratchblocksPlugin extends Plugin {
     if (src) {
       menu.addItem((item) =>
         item
-          .setTitle("Copy Scratchblocks svg")
-          .setIcon("file-code")
+          .setTitle("Copy Scratchblocks png")
+          .setIcon("image")
           .onClick(() => {
-            void copyTextToClipboard(this.renderSVGString(src));
+            void this.copyScratchblocksPNG(src);
+          })
+      );
+
+      menu.addItem((item) =>
+        item
+          .setTitle("Export Scratchblocks to svg")
+          .setIcon("file-code")
+          .onClick(async () => {
+            await this.exportScratchblocksSVG(src, info.file?.path);
           })
       );
 
@@ -135,7 +164,7 @@ export default class ScratchblocksPlugin extends Plugin {
           .setIcon("download")
           .onClick(async () => {
             await exportScratchblocksPNG(
-              this.getPNGExportOptions(src, info.file?.path)
+              this.getExportOptions(src, info.file?.path)
             );
           })
       );
@@ -167,10 +196,9 @@ export default class ScratchblocksPlugin extends Plugin {
       );
 
       const rendered = createRenderedBlock(src, svg, {
-        ...this.getPNGExportOptions(src, ctx.sourcePath),
+        ...this.getExportOptions(src, ctx.sourcePath),
         exportAllPNG: () => this.exportAllScratchblocksPNGFromFile(ctx.sourcePath),
         showToolbar: this.settings.showToolbar,
-        svgText: this.renderSVGString(src),
       });
 
       el.replaceWith(rendered);
@@ -182,15 +210,6 @@ export default class ScratchblocksPlugin extends Plugin {
     }
   }
 
-  private renderSVGString(src: string): string {
-    return this.renderer.getSVGString(
-      src,
-      this.getAllLanguages(),
-      this.settings.style,
-      this.settings.scale
-    );
-  }
-
   private renderPNGBlob(src: string): Promise<Blob> {
     return this.renderer.getPNGBlob(
       src,
@@ -200,16 +219,41 @@ export default class ScratchblocksPlugin extends Plugin {
     );
   }
 
+  private renderSVGString(src: string): string {
+    return this.renderer.getSVGString(
+      src,
+      this.getAllLanguages(),
+      this.settings.style,
+      this.settings.scale
+    );
+  }
+
+  private async copyScratchblocksPNG(src: string) {
+    try {
+      await copyPNGBlobToClipboard(await this.renderPNGBlob(src));
+    } catch (error) {
+      new Notice(`Scratchblocks PNG copy failed: ${formatError(error)}`);
+    }
+  }
+
   private async exportAllScratchblocksPNG(
     sources: string[],
     sourcePath?: string
   ) {
     try {
       await exportScratchblocksPNGFiles(
-        sources.map((src) => this.getPNGExportOptions(src, sourcePath))
+        sources.map((src) => this.getExportOptions(src, sourcePath))
       );
     } catch (error) {
       new Notice(`Scratchblocks PNG export failed: ${formatError(error)}`);
+    }
+  }
+
+  private async exportScratchblocksSVG(src: string, sourcePath?: string) {
+    try {
+      await exportScratchblocksSVG(this.getExportOptions(src, sourcePath));
+    } catch (error) {
+      new Notice(`Scratchblocks SVG export failed: ${formatError(error)}`);
     }
   }
 
@@ -228,7 +272,7 @@ export default class ScratchblocksPlugin extends Plugin {
     }
   }
 
-  private getPNGExportOptions(
+  private getExportOptions(
     src: string,
     sourcePath?: string
   ): ExportOptions {
@@ -237,6 +281,9 @@ export default class ScratchblocksPlugin extends Plugin {
       filenameTemplate: this.settings.pngFilenameTemplate,
       firstLine: getFirstLine(src),
       pngBlob: () => this.renderPNGBlob(src),
+      svgBlob: () => new Blob([this.renderSVGString(src)], {
+        type: SVG_MIME_TYPE,
+      }),
       sourcePath,
       vault: this.app.vault,
     };

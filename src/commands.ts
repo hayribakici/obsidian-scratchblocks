@@ -1,10 +1,14 @@
 import type { Editor, Vault } from "obsidian";
 import type { ScratchblocksPNGExportPath } from "./types";
 
+export const PNG_MIME_TYPE = "image/png";
+export const SVG_MIME_TYPE = "image/svg+xml;charset=utf-8";
+
 export interface ExportOptions {
     firstLine: string;
     filenameTemplate: string;
     pngBlob: () => Promise<Blob>;
+    svgBlob: () => Blob;
     exportPath?: ScratchblocksPNGExportPath;
     sourcePath?: string;
     vault?: Vault;
@@ -14,8 +18,20 @@ export function formatError(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-export async function copyTextToClipboard(text: string) {
-    await navigator.clipboard.writeText(text);
+export async function copyPNGBlobToClipboard(blob: Blob) {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+        throw new Error("Copying PNG images to the clipboard is not supported");
+    }
+
+    const pngBlob = blob.type === PNG_MIME_TYPE ? blob : new Blob([blob], {
+        type: PNG_MIME_TYPE,
+    });
+
+    await navigator.clipboard.write([
+        new ClipboardItem({
+            [PNG_MIME_TYPE]: pngBlob,
+        }),
+    ]);
 }
 
 export function getScratchblocksSource(editor: Editor): string | null {
@@ -51,15 +67,19 @@ export function getScratchblocksFenceSource(editor: Editor): string | null {
     return src || null;
 }
 
+export async function exportScratchblocksSVG(options: ExportOptions) {
+    await exportBlob(options.svgBlob(), options, "svg");
+}
+
 export async function exportScratchblocksPNG(options: ExportOptions) {
     const blob = await options.pngBlob();
-    await exportPNGBlob(blob, options);
+    await exportBlob(blob, options, "png");
 }
 
 export async function exportAllScratchblocksPNG(options: ExportOptions[]) {
     for (const option of options) {
         const blob = await option.pngBlob();
-        await exportPNGBlob(blob, option);
+        await exportBlob(blob, option, "png");
     }
 }
 
@@ -110,13 +130,17 @@ export function getFirstLine(src: string): string {
         .find(Boolean) || "";
 }
 
-function getPNGFilename(firstLine: string, template: string): string {
+function getExportFilename(
+    firstLine: string,
+    template: string,
+    extension: "png" | "svg"
+): string {
     const filename = (template || "scratchblocks_{firstLine}")
         .replaceAll("{firstLine}", firstLine || "block")
         .replaceAll("{datetime}", getFilenameDateTime());
     const sanitized = sanitizeFilenamePart(filename) || "scratchblocks";
 
-    return `${sanitized}.png`;
+    return `${sanitized}.${extension}`;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -145,8 +169,16 @@ async function saveBlobToSourceFolder(
     await vault.createBinary(targetPath, await blob.arrayBuffer());
 }
 
-async function exportPNGBlob(blob: Blob, options: ExportOptions) {
-    const filename = getPNGFilename(options.firstLine, options.filenameTemplate);
+async function exportBlob(
+    blob: Blob,
+    options: ExportOptions,
+    extension: "png" | "svg"
+) {
+    const filename = getExportFilename(
+        options.firstLine,
+        options.filenameTemplate,
+        extension
+    );
 
     if (
         options.exportPath === "current" &&

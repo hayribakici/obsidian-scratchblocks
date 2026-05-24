@@ -52,6 +52,10 @@ export class SBRenderer {
     return new Promise((resolve, reject) => {
       view.exportPNG(async (url: string) => {
         try {
+          if (!isLocalImageURL(url)) {
+            throw new Error("Refusing to fetch a non-local Scratchblocks image URL");
+          }
+
           const response = await fetch(url);
 
           resolve(await response.blob());
@@ -76,4 +80,8 @@ export class SBRenderer {
 
     return scratchblocks.newView(doc, { style, scale });
   }
+}
+
+function isLocalImageURL(url: string): boolean {
+  return url.startsWith("blob:") || url.startsWith("data:");
 }
