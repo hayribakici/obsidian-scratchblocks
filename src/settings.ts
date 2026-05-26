@@ -103,11 +103,8 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     })
             );
 
-        containerEl.createEl("h3", { text: "Preview" });
-
         this.stylePreviewDiv = new Setting(containerEl)
             .setName("Preview")
-            .setDesc("Preview of the current settings")
             .settingEl.createDiv({
                 cls: "scratchblocks-style-preview",
             });
@@ -116,7 +113,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("PNG filename template")
-            .setDesc("Use {firstLine} and/or {datetime}; .png is added automatically")
+            .setDesc("Use {firstLine} and/or {datetime}")
             .addText((text) =>
                 text
                     .setPlaceholder("scratchblocks_{firstLine}")
