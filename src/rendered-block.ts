@@ -12,7 +12,6 @@ interface RenderedBlockOptions extends ExportOptions {
 }
 
 export function createRenderedBlock(
-    src: string,
     svg: SVGElement,
     options: RenderedBlockOptions
 ): HTMLElement {
@@ -61,7 +60,7 @@ function appendCopyPngButtonToToolbar(
             window.setTimeout(() => {
                 setIcon(copyPngButton, "copy");
             }, 1200);
-        } catch {       
+        } catch {
             setIcon(copyPngButton, "x");
 
             window.setTimeout(() => {

@@ -195,7 +195,7 @@ export default class ScratchblocksPlugin extends Plugin {
         this.settings.scale
       );
 
-      const rendered = createRenderedBlock(src, svg, {
+      const rendered = createRenderedBlock(svg, {
         ...this.getExportOptions(src, ctx.sourcePath),
         exportAllPNG: () => this.exportAllScratchblocksPNGFromFile(ctx.sourcePath),
         showToolbar: this.settings.showToolbar,
