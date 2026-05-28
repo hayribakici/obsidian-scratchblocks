@@ -11,6 +11,19 @@
     unicode-bidi: isolate;
 }
 
+.scratchblocks-inline-rendered {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.scratchblocks-inline-rendered svg {
+    display: block;
+}
+
 .scratchblocks-actions {
     position: absolute;
     top: 0;

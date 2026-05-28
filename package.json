@@ -4,10 +4,17 @@
   "description": "Render Scratchblocks code blocks in Obsidian with language and style support.",
   "main": "main.js",
   "license": "MIT",
+  "esbuild": {
+    "external": [
+      "obsidian",
+      "@codemirror/state",
+      "@codemirror/view"
+    ]
+  },
   "scripts": {
     "build": "obsidian-plugin build src/main.ts",
     "dev": "obsidian-plugin dev src/main.ts",
-    "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js"
+    "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js && esbuild tests/backticked-text.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-backticked-text.test.js && node /tmp/obsidian-scratchblocks-backticked-text.test.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.35.1",

@@ -155,9 +155,11 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
 
         const svg = this.plugin.renderer.getSVG(
             greenFlagCmd,
-            [this.plugin.settings.languageCode],
-            this.plugin.settings.style,
-            this.plugin.settings.scale
+            {
+                languages: [this.plugin.settings.languageCode],
+                style: this.plugin.settings.style,
+                scale: this.plugin.settings.scale,
+            }
         );
 
         this.stylePreviewDiv.appendChild(svg);

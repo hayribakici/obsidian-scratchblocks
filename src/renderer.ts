@@ -2,6 +2,13 @@ import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
 import type { LanguageCode, ScratchblocksStyle } from "./types";
 
+export interface ScratchblocksRenderOptions {
+  languages: LanguageCode[];
+  style: ScratchblocksStyle;
+  scale: number;
+  inline?: boolean;
+}
+
 interface ScratchblocksView {
   render(): SVGElement;
   exportSVGString(): string;
@@ -14,25 +21,16 @@ export class SBRenderer {
     scratchblocks.appendStyles();
   }
 
-  getSVG(
-    src: string,
-    languages: LanguageCode[],
-    style: ScratchblocksStyle,
-    scale: number
-  ): SVGElement {
-    return scratchblocks.render(scratchblocks.parse(src, { languages }), {
-      style,
-      scale,
+  getSVG(src: string, options: ScratchblocksRenderOptions): SVGElement {
+    return scratchblocks.render(this.parse(src, options.languages), {
+      style: options.style,
+      scale: options.scale,
+      inline: options.inline,
     });
   }
 
-  getSVGString(
-    src: string,
-    languages: LanguageCode[],
-    style: ScratchblocksStyle,
-    scale: number
-  ): string {
-    const view = this.getView(src, languages, style, scale);
+  getSVGString(src: string, options: ScratchblocksRenderOptions): string {
+    const view = this.getView(src, options);
 
     view.render();
 
@@ -41,11 +39,9 @@ export class SBRenderer {
 
   async getPNGBlob(
     src: string,
-    languages: LanguageCode[],
-    style: ScratchblocksStyle,
-    scale: number
+    options: ScratchblocksRenderOptions
   ): Promise<Blob> {
-    const view = this.getView(src, languages, style, scale);
+    const view = this.getView(src, options);
 
     view.render();
 
@@ -72,13 +68,18 @@ export class SBRenderer {
 
   private getView(
     src: string,
-    languages: LanguageCode[],
-    style: ScratchblocksStyle,
-    scale: number
+    options: ScratchblocksRenderOptions
   ): ScratchblocksView {
-    const doc = scratchblocks.parse(src, { languages });
+    const doc = this.parse(src, options.languages);
 
-    return scratchblocks.newView(doc, { style, scale });
+    return scratchblocks.newView(doc, {
+      style: options.style,
+      scale: options.scale,
+    });
+  }
+
+  private parse(src: string, languages: LanguageCode[]) {
+    return scratchblocks.parse(src, { languages });
   }
 }
 

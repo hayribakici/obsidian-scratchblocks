@@ -3,6 +3,7 @@ import type { ScratchblocksPNGExportPath } from "./types";
 
 export const PNG_MIME_TYPE = "image/png";
 export const SVG_MIME_TYPE = "image/svg+xml;charset=utf-8";
+const INLINE_SCRATCHBLOCKS_PREFIX = "sb ";
 
 export interface ExportOptions {
     firstLine: string;
@@ -42,6 +43,16 @@ export function getScratchblocksSource(editor: Editor): string | null {
     }
 
     return getScratchblocksFenceSource(editor);
+}
+
+export function getInlineScratchblocksSource(text: string): string | null {
+    const trimmed = text.trim();
+
+    if (!trimmed.toLowerCase().startsWith(INLINE_SCRATCHBLOCKS_PREFIX)) {
+        return null;
+    }
+
+    return trimmed.slice(INLINE_SCRATCHBLOCKS_PREFIX.length).trim() || null;
 }
 
 export function getScratchblocksFenceSource(editor: Editor): string | null {

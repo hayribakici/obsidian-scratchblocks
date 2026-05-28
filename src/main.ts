@@ -3,6 +3,7 @@ import scratchblocks from "scratchblocks";
 
 import { ScratchblocksSettingTab } from "./settings";
 import { SBRenderer } from "./renderer";
+import { createBacktickedTextExtension } from "./editor-extension";
 import {
   copyPNGBlobToClipboard,
   exportAllScratchblocksPNG as exportScratchblocksPNGFiles,
@@ -12,6 +13,7 @@ import {
   getAllScratchblocksSources,
   getAllScratchblocksSourcesFromText,
   getFirstLine,
+  getInlineScratchblocksSource,
   getScratchblocksFenceSource,
   getScratchblocksSource,
   SVG_MIME_TYPE,
@@ -19,6 +21,7 @@ import {
 import { createRenderedBlock } from "./rendered-block";
 
 import type { LanguageCode, ScratchblocksSettings } from "./types";
+import type { ScratchblocksRenderOptions } from "./renderer";
 import type {
   MarkdownFileInfo,
   MarkdownPostProcessorContext,
@@ -34,6 +37,9 @@ const DEFAULT_SETTINGS: ScratchblocksSettings = {
   pngFilenameTemplate: "scratchblocks_{firstLine}",
   pngExportPath: "current",
 };
+
+const FALLBACK_LANGUAGE = "en" as LanguageCode;
+const INLINE_SCALE = 0.4;
 
 export default class ScratchblocksPlugin extends Plugin {
   settings: ScratchblocksSettings;
@@ -57,6 +63,15 @@ export default class ScratchblocksPlugin extends Plugin {
     );
     this.registerMarkdownCodeBlockProcessor("scratchblocks", (src, el, ctx) =>
       this.renderScratchblocksCodeBlock(src, el, ctx)
+    );
+    this.registerMarkdownPostProcessor((el) =>
+      this.renderInlineScratchblocksCodeElements(el)
+    );
+    this.registerEditorExtension(
+      createBacktickedTextExtension(
+        getInlineScratchblocksSource,
+        (src) => this.renderScratchblocksInlineCode(src)
+      )
     );
   }
 
@@ -182,18 +197,47 @@ export default class ScratchblocksPlugin extends Plugin {
     }
   }
 
+  private renderScratchblocksInlineCode(src: string): HTMLElement {
+    const container = createSpan({
+      cls: "scratchblocks-inline-rendered",
+    });
+
+    try {
+      const svg = this.renderer.getSVG(src, this.getRenderOptions(true));
+      container.appendChild(svg);
+    } catch (error) {
+      container.createSpan({
+        text: `Error: ${formatError(error)}`,
+        cls: "scratchblocks-error",
+      });
+    }
+
+    return container;
+  }
+
+  private renderInlineScratchblocksCodeElements(el: HTMLElement) {
+    el.querySelectorAll("code").forEach((codeEl) => {
+      if (codeEl.closest("pre")) {
+        return;
+      }
+
+      const src = getInlineScratchblocksSource(codeEl.textContent ?? "");
+
+      if (!src) {
+        return;
+      }
+
+      codeEl.replaceWith(this.renderScratchblocksInlineCode(src));
+    });
+  }
+
   private renderScratchblocksCodeBlock(
     src: string,
     el: HTMLElement,
     ctx: MarkdownPostProcessorContext
   ) {
     try {
-      const svg = this.renderer.getSVG(
-        src,
-        this.getAllLanguages(),
-        this.settings.style,
-        this.settings.scale
-      );
+      const svg = this.renderer.getSVG(src, this.getRenderOptions());
 
       const rendered = createRenderedBlock(svg, {
         ...this.getExportOptions(src, ctx.sourcePath),
@@ -211,21 +255,11 @@ export default class ScratchblocksPlugin extends Plugin {
   }
 
   private renderPNGBlob(src: string): Promise<Blob> {
-    return this.renderer.getPNGBlob(
-      src,
-      this.getAllLanguages(),
-      this.settings.style,
-      this.settings.scale
-    );
+    return this.renderer.getPNGBlob(src, this.getRenderOptions());
   }
 
   private renderSVGString(src: string): string {
-    return this.renderer.getSVGString(
-      src,
-      this.getAllLanguages(),
-      this.settings.style,
-      this.settings.scale
-    );
+    return this.renderer.getSVGString(src, this.getRenderOptions());
   }
 
   private async copyScratchblocksPNG(src: string) {
@@ -289,13 +323,21 @@ export default class ScratchblocksPlugin extends Plugin {
     };
   }
 
-  private getAllLanguages(): LanguageCode[] {
-    return Array.from(
-      new Set<LanguageCode>([
-        this.settings.languageCode,
-        "en" as LanguageCode,
-      ])
-    );
+  private getRenderOptions(inline = false): ScratchblocksRenderOptions {
+    return {
+      languages: this.getRenderLanguages(),
+      style: this.settings.style,
+      scale: inline ? INLINE_SCALE : this.settings.scale,
+      inline,
+    };
+  }
+
+  private getRenderLanguages(): LanguageCode[] {
+    if (this.settings.languageCode === FALLBACK_LANGUAGE) {
+      return [FALLBACK_LANGUAGE];
+    }
+
+    return [this.settings.languageCode, FALLBACK_LANGUAGE];
   }
 
   async loadSettings() {
@@ -304,7 +346,7 @@ export default class ScratchblocksPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
 
     if (!scratchblocks.allLanguages[this.settings.languageCode]) {
-      this.settings.languageCode = "en" as LanguageCode;
+      this.settings.languageCode = FALLBACK_LANGUAGE;
     }
 
     if (
