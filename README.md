@@ -16,6 +16,20 @@ Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plu
 
 Both `scratchblock` and `scratchblocks` code fences are supported.
 
+### Inline `scratchblocks`
+
+Use ~`sb <scratchcode>`~ in order to display inline scratchblocks code with a `sb` prefix.
+
+So writing 
+
+~~~suggestion
+OMG, I guess a `sb when green flag clicked` snuck itself into the text.
+~~~
+
+will be rendered as:
+
+> OMG, I guess a <img width="54" height="30" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" /> snuck itself into the text.
+
 ## Under the hood
 
 It exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
