@@ -18,7 +18,7 @@ Both `scratchblock` and `scratchblocks` code fences are supported.
 
 ### Inline `scratchblocks`
 
-Use ~`sb <scratchcode>`~ in order to display inline scratchblocks code with a `sb` prefix.
+Use `sb <scratchcode>` in order to display inline scratchblocks code with a `sb` prefix.
 
 So writing 
 
