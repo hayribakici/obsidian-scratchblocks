@@ -15,10 +15,13 @@ export function createBacktickedTextExtension(
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
+      fencedLines: Set<number>;
 
       constructor(view: EditorView) {
+        this.fencedLines = getFencedCodeBlockLines(view);
         this.decorations = buildBacktickedTextDecorations(
           view,
+          this.fencedLines,
           getReplacementText,
           renderReplacement
         );
@@ -30,8 +33,13 @@ export function createBacktickedTextExtension(
           update.selectionSet ||
           update.viewportChanged
         ) {
+          if (update.docChanged) {
+            this.fencedLines = getFencedCodeBlockLines(update.view);
+          }
+
           this.decorations = buildBacktickedTextDecorations(
             update.view,
+            this.fencedLines,
             getReplacementText,
             renderReplacement
           );
@@ -73,11 +81,11 @@ export function findBacktickedText(
 
 function buildBacktickedTextDecorations(
   view: EditorView,
+  fencedLines: Set<number>,
   getReplacementText: (text: string) => string | null,
   renderReplacement: (text: string) => HTMLElement
 ): DecorationSet {
   const ranges = [];
-  const fencedLines = getFencedCodeBlockLines(view);
 
   for (const visibleRange of view.visibleRanges) {
     let line = view.state.doc.lineAt(visibleRange.from);

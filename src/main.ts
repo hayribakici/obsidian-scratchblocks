@@ -40,10 +40,12 @@ const DEFAULT_SETTINGS: ScratchblocksSettings = {
 
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
+const MAX_INLINE_SVG_CACHE_ENTRIES = 100;
 
 export default class ScratchblocksPlugin extends Plugin {
   settings: ScratchblocksSettings;
   renderer: SBRenderer;
+  private inlineSVGCache = new Map<string, SVGElement>();
 
   async onload() {
     this.renderer = new SBRenderer();
@@ -203,7 +205,7 @@ export default class ScratchblocksPlugin extends Plugin {
     });
 
     try {
-      const svg = this.renderer.getSVG(src, this.getRenderOptions(true));
+      const svg = this.getInlineSVG(src);
       container.appendChild(svg);
     } catch (error) {
       container.createSpan({
@@ -213,6 +215,36 @@ export default class ScratchblocksPlugin extends Plugin {
     }
 
     return container;
+  }
+
+  private getInlineSVG(src: string): SVGElement {
+    const options = this.getRenderOptions(true);
+    const cacheKey = JSON.stringify({
+      src,
+      languages: options.languages,
+      style: options.style,
+      scale: options.scale,
+      inline: options.inline,
+    });
+    const cached = this.inlineSVGCache.get(cacheKey);
+
+    if (cached) {
+      return cached.cloneNode(true) as SVGElement;
+    }
+
+    const svg = this.renderer.getSVG(src, options);
+
+    if (this.inlineSVGCache.size >= MAX_INLINE_SVG_CACHE_ENTRIES) {
+      const oldestKey = this.inlineSVGCache.keys().next().value;
+
+      if (oldestKey) {
+        this.inlineSVGCache.delete(oldestKey);
+      }
+    }
+
+    this.inlineSVGCache.set(cacheKey, svg.cloneNode(true) as SVGElement);
+
+    return svg;
   }
 
   private renderInlineScratchblocksCodeElements(el: HTMLElement) {
