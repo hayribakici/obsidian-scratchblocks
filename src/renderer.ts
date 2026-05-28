@@ -26,6 +26,22 @@ export class SBRenderer {
     });
   }
 
+  getInlineSVG(
+    src: string,
+    languages: LanguageCode[],
+    style: ScratchblocksStyle,
+    scale: number
+  ): SVGElement {
+    return scratchblocks.render(
+      scratchblocks.parse(src, { inline: true, languages }),
+      {
+        inline: true,
+        style,
+        scale,
+      }
+    );
+  }
+
   getSVGString(
     src: string,
     languages: LanguageCode[],

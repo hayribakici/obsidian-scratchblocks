@@ -58,6 +58,9 @@ export default class ScratchblocksPlugin extends Plugin {
     this.registerMarkdownCodeBlockProcessor("scratchblocks", (src, el, ctx) =>
       this.renderScratchblocksCodeBlock(src, el, ctx)
     );
+    this.registerMarkdownPostProcessor((el) =>
+      this.renderInlineScratchblocks(el)
+    );
   }
 
   private registerCommands() {
@@ -208,6 +211,66 @@ export default class ScratchblocksPlugin extends Plugin {
         cls: "scratchblocks-error",
       });
     }
+  }
+
+  private renderInlineScratchblocks(el: HTMLElement) {
+    const codeElements = [
+      ...(el.matches("code") ? [el] : []),
+      ...Array.from(el.querySelectorAll("code")),
+    ];
+
+    codeElements.forEach((codeEl) => {
+      if (!(codeEl instanceof HTMLElement)) {
+        return;
+      }
+
+      if (codeEl.closest("pre, .scratchblocks-inline-rendered")) {
+        return;
+      }
+
+      const source = this.getInlineScratchblocksSource(codeEl.textContent ?? "");
+
+      if (!source) {
+        return;
+      }
+
+    codeEl.empty();
+    codeEl.addClass("scratchblocks-inline-code");
+    codeEl.appendChild(this.createInlineScratchblocksElement(source));
+    });
+  }
+
+  private getInlineScratchblocksSource(text: string): string | null {
+    const trimmed = text.trim();
+
+    if (!trimmed.startsWith("[sb]")) {
+      return null;
+    }
+
+    return trimmed.slice("[sb]".length).trim() || null;
+  }
+
+  private createInlineScratchblocksElement(src: string): HTMLElement {
+    const container = document.createElement("span");
+    container.addClass("scratchblocks-inline-rendered");
+    container.setAttribute("aria-label", src);
+
+    try {
+      container.appendChild(
+        this.renderer.getInlineSVG(
+          src,
+          this.getAllLanguages(),
+          this.settings.style,
+          0.5
+        )
+      );
+    } catch (error) {
+      container.addClass("scratchblocks-inline-error");
+      container.setText(`[sb] ${src}`);
+      container.setAttribute("title", formatError(error));
+    }
+
+    return container;
   }
 
   private renderPNGBlob(src: string): Promise<Blob> {

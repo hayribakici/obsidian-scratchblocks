@@ -50,3 +50,27 @@
     width: 13px;
     height: 13px;
 }
+
+.scratchblocks-inline-rendered {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+
+    line-height: 1;
+    unicode-bidi: isolate;
+}
+
+.scratchblocks-inline-rendered svg {
+    display: inline-block;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+code.scratchblocks-inline-code {
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+}

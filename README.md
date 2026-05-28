@@ -16,6 +16,12 @@ Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plu
 
 Both `scratchblock` and `scratchblocks` code fences are supported.
 
+Inline blocks can be written inside inline code with a `[sb]` prefix (only in reading view):
+
+```markdown
+`[sb] when green flag clicked`
+```
+
 ## Under the hood
 
 It exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
