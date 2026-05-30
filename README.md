@@ -30,6 +30,35 @@ will be rendered as:
 
 > OMG, I guess a <img width="54" height="30" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" /> snuck itself into the text.
 
+#### Some things to note about inline mode
+
+- The scale is .4
+This means that it may appear somewhat smaller than the surrounding text. A hack to improve this, is to apply css (via a css snippet) that can adjust the *overall* size of the output svg:
+
+```css
+.scratchblocks-inline-rendered svg {
+display:inline-block;
+height:45px; /* Desired height */
+  margin-top: -15px; /* Adjust to pull back into the line */
+  margin-bottom: -15px;
+  vertical-align: middle;
+}
+```
+This can take text that is small like this
+
+<img width="551" height="55" alt="image" src="https://github.com/user-attachments/assets/e0d1fb76-4d70-4529-ac66-30f5a29dc818" />
+
+into something readable text like this:
+
+<img width="374" height="133" alt="image" src="https://github.com/user-attachments/assets/f200fe3e-7210-4afd-8b9a-343788c28e4b" />
+
+- Even with the hack, nested text may be smaller than desired because of necessary padding inserted by scratchblocks itself.
+
+This is especially true with nested blocks:
+
+<img width="1042" height="193" alt="image" src="https://github.com/user-attachments/assets/0e35757f-ee2b-4526-b838-cdb5891abeac" />
+
+
 ## Under the hood
 
 It exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
