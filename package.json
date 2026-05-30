@@ -14,7 +14,7 @@
   "scripts": {
     "build": "obsidian-plugin build src/main.ts",
     "dev": "obsidian-plugin dev src/main.ts",
-    "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js && esbuild tests/backticked-text.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-backticked-text.test.js && node /tmp/obsidian-scratchblocks-backticked-text.test.js"
+    "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js && esbuild tests/backticked-text.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-backticked-text.test.js && node /tmp/obsidian-scratchblocks-backticked-text.test.js && esbuild tests/lru-cache.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-lru-cache.test.js && node /tmp/obsidian-scratchblocks-lru-cache.test.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.35.1",

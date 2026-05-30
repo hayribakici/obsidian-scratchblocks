@@ -15,7 +15,7 @@ interface ScratchblocksView {
   exportPNG(callback: (url: string) => void, scale?: number): void;
 }
 
-export class SBRenderer {
+export class ScratchblocksEngine {
   load() {
     scratchblocks.loadLanguages(allLanguages);
     scratchblocks.appendStyles();

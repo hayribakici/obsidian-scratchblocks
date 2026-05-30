@@ -3,8 +3,8 @@ import {
     copyPNGBlobToClipboard,
     exportScratchblocksPNG,
     exportScratchblocksSVG,
-} from "./commands";
-import type { ExportOptions } from "./commands";
+} from "./scratchblocks-exporter";
+import type { ExportOptions } from "./scratchblocks-exporter";
 
 interface RenderedBlockOptions extends ExportOptions {
     showToolbar: boolean;
