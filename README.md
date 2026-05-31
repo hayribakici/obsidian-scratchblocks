@@ -33,7 +33,7 @@ will be rendered as:
 #### How to improve readability with inline code
 
 - The scale is .4
-This means that it may appear somewhat smaller than the surrounding text. A hack to improve this, is to apply css (via a css snippet) that can adjust the *overall* size of the output svg:
+In the current implementation, the inline code may appear somewhat smaller than the surrounding text. A hack to improve this, is to apply css (via a css snippet) that can adjust the *overall* size of the output svg:
 
 ```css
 .scratchblocks-inline-rendered svg {
