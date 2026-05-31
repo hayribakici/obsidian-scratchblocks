@@ -30,7 +30,7 @@ will be rendered as:
 
 > OMG, I guess a <img width="54" height="30" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" /> snuck itself into the text.
 
-#### Some things to note about inline mode
+#### How to improve readability with inline code
 
 - The scale is .4
 This means that it may appear somewhat smaller than the surrounding text. A hack to improve this, is to apply css (via a css snippet) that can adjust the *overall* size of the output svg:
