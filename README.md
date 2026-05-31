@@ -37,8 +37,8 @@ This means that it may appear somewhat smaller than the surrounding text. A hack
 
 ```css
 .scratchblocks-inline-rendered svg {
-display:inline-block;
-height:45px; /* Desired height */
+  display:inline-block;
+  height:45px; /* Desired height */
   margin-top: -15px; /* Adjust to pull back into the line */
   margin-bottom: -15px;
   vertical-align: middle;
