@@ -52,7 +52,7 @@ into something readable text like this:
 
 <img width="374" height="133" alt="image" src="https://github.com/user-attachments/assets/f200fe3e-7210-4afd-8b9a-343788c28e4b" />
 
-- Even with the hack, nested text may be smaller than desired because of necessary padding inserted by scratchblocks itself.
+Even with the workaround, nested text may be smaller than desired because of necessary padding inserted by scratchblocks itself.
 
 This is especially true with nested blocks:
 
