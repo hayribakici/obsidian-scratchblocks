@@ -1,8 +1,6 @@
 import { Menu, setIcon } from "obsidian";
 import {
-    copyPNGBlobToClipboard,
-    exportScratchblocksPNG,
-    exportScratchblocksSVG,
+    copyPNGBlobToClipboard
 } from "./scratchblocks-exporter";
 import type { ExportOptions } from "./scratchblocks-exporter";
 
@@ -10,7 +8,7 @@ interface RenderedBlockOptions extends ExportOptions {
     showToolbar: boolean;
     exportAllPNG?: () => Promise<void>;
 }
-
+// TODO create a class out of this one.
 export function createRenderedBlock(
     svg: SVGElement,
     options: RenderedBlockOptions
@@ -86,7 +84,7 @@ function appendDownloadPngButtonToToolbar(
 
     downloadPngButton.addEventListener("click", async () => {
         try {
-            await exportScratchblocksPNG(options);
+            await exporter.exportScratchblocksPNG(options);
 
             setIcon(downloadPngButton, "check");
 
