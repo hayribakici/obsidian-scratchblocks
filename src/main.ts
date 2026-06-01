@@ -29,8 +29,8 @@ const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const fencedLanguagesPrefixes = ['scratchblock', 'scratchblocks', 'sb'];
 
 export default class ScratchblocksPlugin extends Plugin {
-  settings: ScratchblocksSettings;
-  renderer: ScratchblocksEngine;
+  private settings: ScratchblocksSettings;
+  private renderer: ScratchblocksEngine;
   private scratchblocksExporter: ScratchblocksExporter;
   private scratchblocksRenderer: ScratchblocksRenderer;
 

@@ -34,19 +34,28 @@ export class ScratchblocksExporter {
     private readonly vault: Vault,
     private readonly engine: ScratchblocksEngine,
     private readonly getSettings: () => ScratchblocksSettings
-  ) {}
+  ) { }
 
   async copyPNG(src: string) {
     try {
-      await copyPNGBlobToClipboard(await this.renderPNGBlob(src));
+      await copyPNGBlobToClipboard(await this.engine.getPNGBlob(src, this.getRenderOptions()));
     } catch (error) {
       new Notice(`Scratchblocks PNG copy failed: ${formatError(error)}`);
     }
   }
 
+  async exportSVG(src: string, sourcePath?: string) {
+    try {
+      var options = this.getExportOptions(src, sourcePath);
+      await exportBlob(options.svgBlob(), options, "svg");
+    } catch (error) {
+      new Notice(`Scratchblocks SVG export failed: ${formatError(error)}`);
+    }
+  }
+
   async exportPNG(src: string, sourcePath?: string) {
     try {
-      await exportScratchblocksPNG(this.getExportOptions(src, sourcePath));
+      await this.exportScratchblocksPNG(this.getExportOptions(src, sourcePath));
     } catch (error) {
       new Notice(`Scratchblocks PNG export failed: ${formatError(error)}`);
     }
@@ -54,19 +63,12 @@ export class ScratchblocksExporter {
 
   async exportAllPNG(sources: string[], sourcePath?: string) {
     try {
-      await exportAllScratchblocksPNG(
-        sources.map((src) => this.getExportOptions(src, sourcePath))
-      );
+      var options = sources.map((src) => this.getExportOptions(src, sourcePath));
+      for (const option of options) {
+        await this.exportScratchblocksPNG(option);
+      }
     } catch (error) {
       new Notice(`Scratchblocks PNG export failed: ${formatError(error)}`);
-    }
-  }
-
-  async exportSVG(src: string, sourcePath?: string) {
-    try {
-      await exportScratchblocksSVG(this.getExportOptions(src, sourcePath));
-    } catch (error) {
-      new Notice(`Scratchblocks SVG export failed: ${formatError(error)}`);
     }
   }
 
@@ -85,6 +87,12 @@ export class ScratchblocksExporter {
     }
   }
 
+  private async exportScratchblocksPNG(options: ExportOptions) {
+    const blob = await options.pngBlob();
+
+    await exportBlob(blob, options, "png");
+  }
+
   getExportOptions(src: string, sourcePath?: string): ExportOptions {
     const settings = this.getSettings();
 
@@ -92,9 +100,9 @@ export class ScratchblocksExporter {
       exportPath: settings.pngExportPath,
       filenameTemplate: settings.pngFilenameTemplate,
       firstLine: getFirstLine(src),
-      pngBlob: () => this.renderPNGBlob(src),
+      pngBlob: () => this.engine.getPNGBlob(src, this.getRenderOptions()),
       svgBlob: () =>
-        new Blob([this.renderSVGString(src)], {
+        new Blob([this.engine.getSVGString(src, this.getRenderOptions())], {
           type: SVG_MIME_TYPE,
         }),
       sourcePath,
@@ -111,14 +119,6 @@ export class ScratchblocksExporter {
       scale: inline ? INLINE_SCALE : settings.scale,
       inline,
     };
-  }
-
-  private renderPNGBlob(src: string): Promise<Blob> {
-    return this.engine.getPNGBlob(src, this.getRenderOptions());
-  }
-
-  private renderSVGString(src: string): string {
-    return this.engine.getSVGString(src, this.getRenderOptions());
   }
 
   private getRenderLanguages(): LanguageCode[] {
@@ -141,8 +141,8 @@ export async function copyPNGBlobToClipboard(blob: Blob) {
     blob.type === PNG_MIME_TYPE
       ? blob
       : new Blob([blob], {
-          type: PNG_MIME_TYPE,
-        });
+        type: PNG_MIME_TYPE,
+      });
 
   await navigator.clipboard.write([
     new ClipboardItem({
@@ -151,23 +151,7 @@ export async function copyPNGBlobToClipboard(blob: Blob) {
   ]);
 }
 
-export async function exportScratchblocksSVG(options: ExportOptions) {
-  await exportBlob(options.svgBlob(), options, "svg");
-}
 
-export async function exportScratchblocksPNG(options: ExportOptions) {
-  const blob = await options.pngBlob();
-
-  await exportBlob(blob, options, "png");
-}
-
-export async function exportAllScratchblocksPNG(options: ExportOptions[]) {
-  for (const option of options) {
-    const blob = await option.pngBlob();
-
-    await exportBlob(blob, option, "png");
-  }
-}
 
 function getFirstLine(src: string): string {
   return (
