@@ -32,32 +32,51 @@ will be rendered as:
 
 #### How to improve readability with inline code
 
-- The scale is .4
-In the current implementation, the inline code may appear somewhat smaller than the surrounding text. A hack to improve this, is to apply css (via a css snippet) that can adjust the *overall* size of the output svg:
+In the current implementation, the inline code may appear somewhat smaller than surrounding text. 
 
+The reason the blocks appear smaller is that the internal scale used inline is different than the scale used for codeblocks. However, using CSS snippets, it can be partially adjusted to fit the user's font and line spacing. ([CSS snippets are described here](https://obsidian.md/help/snippets), but better managed via plugins such as [SnipDock](https://community.obsidian.md/plugins/snipdock).)
+
+CSS such as this:
 ```css
 .scratchblocks-inline-rendered svg {
   display:inline-block;
-  height:45px; /* Desired height */
-  margin-top: -15px; /* Adjust to pull back into the line */
-  margin-bottom: -15px;
-  vertical-align: middle;
+  height:45px; /* Adjust this to your desired overall height */
+  margin-top: -15px; /* Adjust to pull text back into the line spacing */
+  margin-bottom: -15px; /* top and bottom */*
+  vertical-align: middle; /* makes it even */
 }
 ```
-This can take text that is small like this
+ can turn scratchblock that are small relative to the main text:
 
-<img width="551" height="55" alt="image" src="https://github.com/user-attachments/assets/e0d1fb76-4d70-4529-ac66-30f5a29dc818" />
+<img width="1008" height="92" alt="image" src="https://github.com/user-attachments/assets/08238991-3a9d-4616-b61f-b126014a964b" />
 
-into something readable text like this:
+ into blocks that are more readable:
+ 
+<img width="1342" height="92" alt="image" src="https://github.com/user-attachments/assets/a80e4024-cd02-406f-bc08-fc7c316f8812" />
 
-<img width="374" height="133" alt="image" src="https://github.com/user-attachments/assets/f200fe3e-7210-4afd-8b9a-343788c28e4b" />
+Note that this is only a workaround, and nested text may still be smaller than desired because of necessary padding inserted by scratchblocks itself. 
 
-Even with the workaround, nested text may be smaller than desired because of necessary padding inserted by scratchblocks itself.
+- Without styling, the text is small at all levels. Note that the height gets larger.
 
-This is especially true with nested blocks:
+<img width="274" height="246" alt="image" src="https://github.com/user-attachments/assets/a6f43c62-f628-4eaa-96e0-69bc5b676155" />
 
-<img width="1042" height="193" alt="image" src="https://github.com/user-attachments/assets/0e35757f-ee2b-4526-b838-cdb5891abeac" />
+- Styling improves this, but within limits. The text gets smaller the more nesting one applies while the overall height stays the same.
 
+<img width="305" height="237" alt="image" src="https://github.com/user-attachments/assets/dd9feb82-271f-4106-8ab0-ba398aa10b26" />
+
+This code shows the effect on line height and font size in a paragraph.
+
+```
+Level 1 `sb not <>` with lots of extra text and stuff to get onto next line. Level 2 `sb not <not <>>` with lots of extra text and stuff to get onto next line. Level 3 `sb not <not <not <>>>` with lots of extra text and stuff to get onto next line. Level 4 `sb not <not <not <not <>>>>` with lots of extra text and stuff to get onto next line. Level 5 `sb not <not <not < not < not <> > > > >` with lots of extra text and stuff to get onto next line. Level 6 `sb not <not <not < not < not < not <> > > > > >` with lots of extra text and stuff to get onto next line. Level 7 `sb not <not <not < not < not < not < not <> > > > > > >` with lots of extra text and stuff to get onto next line. Level 8 `sb not <not <not < not < not < not < not < not <> > > > > > > >` with lots of extra text and stuff to get onto next line. Level 9 `sb not <not <not < not < not < not < not < not <not <>> > > > > > > >` with lots of extra text and stuff to get onto next line.  Level 10 `sb not <not <not < not < not < not < not < not <not <not <>>> > > > > > > >` with lots of extra text and stuff to get onto next line. Level 11 `sb not <not <not < not < not < not < not < not <not <not <not <>>>> > > > > > > >` with lots of extra text and stuff to get onto next line. Level 12 `sb not <not <not < not < not < not < not < not <not <not <not <not <>>>>> > > > > > > >` with lots of extra text and stuff to get onto next line.
+```
+
+- without styling line height varies according to height of image:
+<img width="2908" height="522" alt="image" src="https://github.com/user-attachments/assets/b20abbb5-c0a4-4c29-b752-0e03c53816d0" />
+
+- with styling line height is consistent:
+<img width="2886" height="462" alt="image" src="https://github.com/user-attachments/assets/c475421b-2f7d-409c-b22b-26c3a3f7cb4f" />
+
+Which is better may depend on the context.
 
 ## Under the hood
 
