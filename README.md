@@ -30,27 +30,30 @@ will be rendered as:
 
 > OMG, I guess a <img width="54" height="30" alt="a green flag block is displayed inline" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" /> snuck itself into the text.
 
-#### How to improve readability with inline code
 
-In the current implementation, inline code may appear somewhat smaller than the surrounding text. This is due to the internal scale being different than the one used for multi-line codeblocks. Using CSS snippets, however, can partly adjust the appearance to fit the user's font and line spacing. ([CSS snippets are described here](https://obsidian.md/help/snippets), but better managed via plugins such as [SnipDock](https://community.obsidian.md/plugins/snipdock).)
+## Caveats and workarounds
+
+One caveat for inline code is, that it may appear somewhat smaller than the surrounding text. This is due to the internal scale being different from the one used for multi-line codeblocks. CSS snippets can partly adjust the appearance to fit the user's font and line spacing ([CSS snippets are described here](https://obsidian.md/help/snippets), but better managed via plugins such as [SnipDock](https://community.obsidian.md/plugins/snipdock)).
 
 For example, this CSS:
 
 ```css
 .scratchblocks-inline-rendered svg {
   display:inline-block;
-  height:45px; /* Adjust this to your desired overall height */
-  margin-top: -15px ;/* Adjust to pull text back into the line spacing */
-  margin-bottom: -15px; /* top and bottom */
+  height:45px;            /* Adjust this to your desired overall height */
+  margin-top: -15px;      /* Adjust to pull text back into the line spacing */
+  margin-bottom: -15px;   /* top and bottom */
   vertical-align: middle; /* makes it even */
-  width: auto; /* necessary as well */
+  width: auto;            /* necessary as well */
 }
 ```
-renders the above as:
+renders the above as[^1]:
 
 <img width="auto" height="60" alt="image" src="https://github.com/user-attachments/assets/d9d6c97b-bec7-4dde-b56d-4a3103cf1b82" />
 
-The CSS required and final results will depend on vault-specific factors such as the theme.  *Nested blocks* will appear smaller because of necessary padding inserted by scratchblocks itself. For more details and a comparison with or without styling, see this [wiki entry](https://github.com/hayribakici/obsidian-scratchblocks/wiki/Comparison-of-inline-scratchblocks-with-and-without-styling/).
+*Nested blocks* will appear smaller because of necessary padding inserted by scratchblocks itself. For more details and a comparison with or without styling, see this [wiki entry](https://github.com/hayribakici/obsidian-scratchblocks/wiki/Comparison-of-inline-scratchblocks-with-and-without-styling/).
+
+[^1]: The CSS required and final results will depend on vault-specific factors such as the theme.  
 
 ## Under the hood
 
