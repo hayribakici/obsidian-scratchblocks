@@ -50,7 +50,7 @@ renders the above as:
 
 <img width="auto" height="60" alt="image" src="https://github.com/user-attachments/assets/d9d6c97b-bec7-4dde-b56d-4a3103cf1b82" />
 
-The CSS required and final results will depend on vault-specific factors such as the theme.  *Nested blocks* will appear smaller because of necessary padding inserted by scratchblocks itself. For more details and a comparison with or without styling, see this [wiki entry](https://github.com/hayribakici/obsidian-scratchblocks/wiki/Comparison-of-inline-scratchblocks-with-and-without-styling/)).
+The CSS required and final results will depend on vault-specific factors such as the theme.  *Nested blocks* will appear smaller because of necessary padding inserted by scratchblocks itself. For more details and a comparison with or without styling, see this [wiki entry](https://github.com/hayribakici/obsidian-scratchblocks/wiki/Comparison-of-inline-scratchblocks-with-and-without-styling/).
 
 ## Under the hood
 
