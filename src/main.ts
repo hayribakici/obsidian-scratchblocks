@@ -41,6 +41,7 @@ const DEFAULT_SETTINGS: ScratchblocksSettings = {
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
 const MAX_INLINE_SVG_CACHE_ENTRIES = 100;
+const fencedLanguagesPrefixes = ['scratchblock', 'scratchblocks', 'sb'];
 
 export default class ScratchblocksPlugin extends Plugin {
   settings: ScratchblocksSettings;
@@ -60,12 +61,11 @@ export default class ScratchblocksPlugin extends Plugin {
   }
 
   private registerScratchblocksProcessors() {
-    this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el, ctx) =>
-      this.renderScratchblocksCodeBlock(src, el, ctx)
-    );
-    this.registerMarkdownCodeBlockProcessor("scratchblocks", (src, el, ctx) =>
-      this.renderScratchblocksCodeBlock(src, el, ctx)
-    );
+    fencedLanguagesPrefixes.forEach((elem, _, __) => {
+      this.registerMarkdownCodeBlockProcessor(elem, (src, el, ctx) =>
+        this.renderScratchblocksCodeBlock(src, el, ctx)
+      )
+    });
     this.registerMarkdownPostProcessor((el) =>
       this.renderInlineScratchblocksCodeElements(el)
     );
