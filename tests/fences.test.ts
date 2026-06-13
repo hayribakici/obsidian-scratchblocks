@@ -16,6 +16,10 @@ test("finds all real scratchblocks fences", () => {
         "```scratchblocks",
         "say [hello]",
         "```",
+        "",
+        "```sb",
+        "say [hello]",
+        "```",
         "after",
     ].join("\n");
 
