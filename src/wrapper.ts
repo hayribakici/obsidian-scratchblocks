@@ -1,6 +1,6 @@
 import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
-import type { LanguageCode, ScratchblocksStyle } from "./types";
+import type { LanguageCode, ScratchblocksStyle } from "./utils/types";
 
 export interface RenderOptions {
   languages: LanguageCode[];
@@ -15,14 +15,41 @@ interface ScratchblocksView {
   exportPNG(callback: (url: string) => void, scale?: number): void;
 }
 
-export class SBRenderer {
+export class ScratchblocksWrapper {
+  private loaded = false;
+
   load() {
+    if (this.loaded) {
+      return;
+    }
+
     scratchblocks.loadLanguages(allLanguages);
     scratchblocks.appendStyles();
+    this.loaded = true;
   }
 
-  getSVG(src: string, options: RenderOptions): SVGElement {
-    var parsed = scratchblocks.parse(src, options.languages);
+  getLanguageCodes(): LanguageCode[] {
+    return Object.keys(scratchblocks.allLanguages) as LanguageCode[];
+  }
+
+  getLanguageName(languageCode: LanguageCode): string {
+    return scratchblocks.allLanguages[languageCode]?.name || languageCode;
+  }
+
+  getGreenFlagCommand(languageCode: LanguageCode): string {
+    return (
+      scratchblocks.allLanguages[languageCode]?.commands?.EVENT_WHENFLAGCLICKED ??
+      "when green flag clicked"
+    );
+  }
+
+  hasLanguage(languageCode: LanguageCode): boolean {
+    return Boolean(scratchblocks.allLanguages[languageCode]);
+  }
+
+  createSVGElement(src: string, options: RenderOptions): SVGElement {
+    const parsed = scratchblocks.parse(src, options);
+
     return scratchblocks.render(parsed, {
       style: options.style,
       scale: options.scale,
@@ -30,16 +57,16 @@ export class SBRenderer {
     });
   }
 
-  getSVGString(src: string, options: RenderOptions): string {
-    const view = this.getView(src, options);
+  createSVGString(src: string, options: RenderOptions): string {
+    const view = this.createView(src, options);
 
     view.render();
 
     return view.exportSVGString();
   }
 
-  async getPNGBlob(src: string, options: RenderOptions): Promise<Blob> {
-    const view = this.getView(src, options);
+  async createPNGBlob(src: string, options: RenderOptions): Promise<Blob> {
+    const view = this.createView(src, options);
 
     view.render();
 
@@ -64,8 +91,8 @@ export class SBRenderer {
     });
   }
 
-  private getView(src: string, options: RenderOptions): ScratchblocksView {
-    const parsed = scratchblocks.parse(src, options.languages);
+  private createView(src: string, options: RenderOptions): ScratchblocksView {
+    const parsed = scratchblocks.parse(src, options);
 
     return scratchblocks.newView(parsed, {
       style: options.style,

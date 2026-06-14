@@ -1,6 +1,6 @@
 import assert from "assert/strict";
 import { findBacktickedText } from "../src/editor-extension";
-import { getInlineScratchblocksSource } from "../src/commands";
+import { getInlineScratchblocksSource } from "../src/utils/utils";
 
 function test(name: string, run: () => void) {
     run();

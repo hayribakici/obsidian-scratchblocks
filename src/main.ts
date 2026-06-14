@@ -1,19 +1,23 @@
 import { MarkdownView, Plugin } from "obsidian";
-import scratchblocks from "scratchblocks";
 
-import { ScratchblocksSettingTab } from "./settings";
-import { ScratchblocksEngine } from "./engine";
+import {
+  ScratchblocksSettingTab,
+  ScratchblocksSettingsManager,
+  ScratchblocksSettingsPreview,
+} from "./settings";
+import { ScratchblocksWrapper } from "./wrapper";
 import { createBacktickedTextExtension } from "./editor-extension";
-import { ScratchblocksExporter } from "./scratchblocks-exporter";
-import { ScratchblocksRenderer } from "./scratchblocks-renderer";
+import { ScratchblocksExporter } from "./exporter";
+import { ScratchblocksToolbar } from "./toolbar";
+import { ScratchblocksView } from "./view";
 import {
   getAllScratchblocksSources,
   getInlineScratchblocksSource,
   getScratchblocksFenceSource,
   getScratchblocksSource,
-} from "./commands";
+} from "./utils/utils";
 
-import type { LanguageCode, ScratchblocksSettings } from "./types";
+import type { LanguageCode, ScratchblocksSettings } from "./utils/types";
 import type { Menu } from "obsidian";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
@@ -29,54 +33,72 @@ const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const fencedLanguagesPrefixes = ['scratchblock', 'scratchblocks', 'sb'];
 
 export default class ScratchblocksPlugin extends Plugin {
-  private settings: ScratchblocksSettings;
-  private renderer: ScratchblocksEngine;
+  private wrapper: ScratchblocksWrapper;
+  private settingsManager: ScratchblocksSettingsManager;
+  private settingsPreview: ScratchblocksSettingsPreview;
   private scratchblocksExporter: ScratchblocksExporter;
-  private scratchblocksRenderer: ScratchblocksRenderer;
+  private scratchblocksToolbar: ScratchblocksToolbar;
+  private scratchblocksView: ScratchblocksView;
 
   async onload() {
-    this.renderer = new ScratchblocksEngine();
+    this.wrapper = new ScratchblocksWrapper();
+    this.wrapper.load();
+    this.settingsManager = new ScratchblocksSettingsManager(DEFAULT_SETTINGS);
+    this.settingsPreview = new ScratchblocksSettingsPreview(
+      this,
+      this.wrapper
+    );
+
     this.scratchblocksExporter = new ScratchblocksExporter(
       this.app.vault,
-      this.renderer,
-      () => this.settings
+      this.wrapper,
+      this.settingsManager
     );
-    this.scratchblocksRenderer = new ScratchblocksRenderer(
-      this.renderer,
-      this.scratchblocksExporter,
-      () => this.settings.showToolbar
+    this.scratchblocksToolbar = new ScratchblocksToolbar(
+      this.scratchblocksExporter
+    );
+    this.scratchblocksView = new ScratchblocksView(
+      this.wrapper,
+      this.scratchblocksToolbar,
+      {
+        getRenderOptions: (inline?: boolean) =>
+          this.settingsManager.getRenderOptions(inline),
+        getShowToolbar: () => this.settingsManager.getShowToolbar(),
+        exportAllPNGFromFile: (sourcePath: string) =>
+          this.scratchblocksExporter.exportAllPNGFromFile(sourcePath),
+      }
     );
 
     await this.loadSettings();
-    this.renderer.load();
 
     this.registerScratchblocksProcessors();
     this.registerCommands();
     this.registerEditorMenu();
-    this.addSettingTab(new ScratchblocksSettingTab(this.app, this));
+    this.addSettingTab(
+      new ScratchblocksSettingTab(this.app, this, this.settingsPreview)
+    );
   }
 
   private registerScratchblocksProcessors() {
-    this.registerMarkdownCodeBlockProcessor("scratchblock", (src, el, ctx) =>
-      this.scratchblocksRenderer.renderCodeBlock(src, el, ctx.sourcePath)
-    );
-    this.registerMarkdownCodeBlockProcessor("scratchblocks", (src, el, ctx) =>
-      this.scratchblocksRenderer.renderCodeBlock(src, el, ctx.sourcePath)
-    );
+    fencedLanguagesPrefixes.forEach((elem, _, __) => {
+      this.registerMarkdownCodeBlockProcessor(elem, (src, el, ctx) =>
+        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath)
+      )
+    });
     this.registerMarkdownPostProcessor((el) =>
-      this.scratchblocksRenderer.renderInlineCodeElements(el)
+      this.scratchblocksView.renderInlineCodeElements(el)
     );
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
-        (src) => this.scratchblocksRenderer.renderInlineCode(src)
+        (src) => this.scratchblocksView.renderInlineCode(src)
       )
     );
   }
 
   private registerCommands() {
     this.addCommand({
-      id: "scratchblocks-copy-svg",
+      id: "copy-png",
       name: "Copy Scratchblocks png",
       editorCheckCallback: (checking, editor) => {
         const src = getScratchblocksSource(editor);
@@ -202,23 +224,39 @@ export default class ScratchblocksPlugin extends Plugin {
   async loadSettings() {
     const loaded = await this.loadData();
 
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+    const settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
 
-    if (!scratchblocks.allLanguages[this.settings.languageCode]) {
-      this.settings.languageCode = FALLBACK_LANGUAGE;
+    if (!this.wrapper.hasLanguage(settings.languageCode)) {
+      settings.languageCode = FALLBACK_LANGUAGE;
     }
 
     if (
       !["scratch2", "scratch3", "scratch3-high-contrast"].includes(
-        this.settings.style
+        settings.style
       )
     ) {
-      this.settings.style = "scratch3";
+      settings.style = "scratch3";
     }
+
+    this.settingsManager.update(settings);
   }
 
   async saveSettings() {
-    await this.saveData(this.settings);
+    await this.saveData(this.settingsManager.get());
+  }
+
+  getSettings(): ScratchblocksSettings {
+    return this.settingsManager.get();
+  }
+
+  async updateSettings(settings: ScratchblocksSettings) {
+    this.settingsManager.update(settings);
+    await this.saveSettings();
+  }
+
+  async patchSettings(settings: Partial<ScratchblocksSettings>) {
+    this.settingsManager.patch(settings);
+    await this.saveSettings();
   }
 
   refreshMarkdownViews() {

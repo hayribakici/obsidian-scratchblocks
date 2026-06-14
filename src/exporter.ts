@@ -1,23 +1,17 @@
 import { Notice, TFile } from "obsidian";
 
-import {
-  getAllScratchblocksSourcesFromText,
-} from "./commands";
-import { formatError } from "./utils";
+import { getAllScratchblocksSourcesFromText } from "./utils/utils";
+import { formatError } from "./utils/utils";
 
 import type { Vault } from "obsidian";
-import type { ScratchblocksEngine, ScratchblocksRenderOptions } from "./engine";
+import type { ScratchblocksWrapper } from "./wrapper";
+import type { ScratchblocksSettingsManager } from "./settings";
 import type {
-  LanguageCode,
   ScratchblocksPNGExportPath,
-  ScratchblocksSettings,
-} from "./types";
+} from "./utils/types";
 
 export const PNG_MIME_TYPE = "image/png";
 export const SVG_MIME_TYPE = "image/svg+xml;charset=utf-8";
-
-const FALLBACK_LANGUAGE = "en" as LanguageCode;
-const INLINE_SCALE = 0.4;
 
 export interface ExportOptions {
   firstLine: string;
@@ -32,13 +26,15 @@ export interface ExportOptions {
 export class ScratchblocksExporter {
   constructor(
     private readonly vault: Vault,
-    private readonly engine: ScratchblocksEngine,
-    private readonly getSettings: () => ScratchblocksSettings
+    private readonly wrapper: ScratchblocksWrapper,
+    private readonly settings: ScratchblocksSettingsManager
   ) { }
 
   async copyPNG(src: string) {
     try {
-      await copyPNGBlobToClipboard(await this.engine.getPNGBlob(src, this.getRenderOptions()));
+      await copyPNGBlobToClipboard(
+        await this.wrapper.createPNGBlob(src, this.settings.getRenderOptions())
+      );
     } catch (error) {
       new Notice(`Scratchblocks PNG copy failed: ${formatError(error)}`);
     }
@@ -94,15 +90,15 @@ export class ScratchblocksExporter {
   }
 
   getExportOptions(src: string, sourcePath?: string): ExportOptions {
-    const settings = this.getSettings();
+    const settings = this.settings.getExportSettings();
 
     return {
-      exportPath: settings.pngExportPath,
-      filenameTemplate: settings.pngFilenameTemplate,
+      exportPath: settings.exportPath,
+      filenameTemplate: settings.filenameTemplate,
       firstLine: getFirstLine(src),
-      pngBlob: () => this.engine.getPNGBlob(src, this.getRenderOptions()),
+      pngBlob: () => this.wrapper.createPNGBlob(src, this.settings.getRenderOptions()),
       svgBlob: () =>
-        new Blob([this.engine.getSVGString(src, this.getRenderOptions())], {
+        new Blob([this.wrapper.createSVGString(src, this.settings.getRenderOptions())], {
           type: SVG_MIME_TYPE,
         }),
       sourcePath,
@@ -110,26 +106,6 @@ export class ScratchblocksExporter {
     };
   }
 
-  getRenderOptions(inline = false): ScratchblocksRenderOptions {
-    const settings = this.getSettings();
-
-    return {
-      languages: this.getRenderLanguages(),
-      style: settings.style,
-      scale: inline ? INLINE_SCALE : settings.scale,
-      inline,
-    };
-  }
-
-  private getRenderLanguages(): LanguageCode[] {
-    const languageCode = this.getSettings().languageCode;
-
-    if (languageCode === FALLBACK_LANGUAGE) {
-      return [FALLBACK_LANGUAGE];
-    }
-
-    return [languageCode, FALLBACK_LANGUAGE];
-  }
 }
 
 export async function copyPNGBlobToClipboard(blob: Blob) {

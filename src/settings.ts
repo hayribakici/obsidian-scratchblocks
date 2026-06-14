@@ -1,30 +1,122 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import scratchblocks from "scratchblocks";
 
 import type ScratchblocksPlugin from "./main";
+import type { RenderOptions } from "./wrapper";
+import type { ScratchblocksWrapper } from "./wrapper";
 
 import type {
     LanguageCode,
     ScratchblocksPNGExportPath,
+    ScratchblocksSettings,
     ScratchblocksStyle,
-} from "./types";
+} from "./utils/types";
+
+const FALLBACK_LANGUAGE = "en" as LanguageCode;
+const INLINE_SCALE = 0.4;
+
+export interface ScratchblocksExportSettings {
+    filenameTemplate: string;
+    exportPath: ScratchblocksPNGExportPath;
+}
+
+export class ScratchblocksSettingsManager {
+    constructor(private settings: ScratchblocksSettings) { }
+
+    get(): ScratchblocksSettings {
+        return this.settings;
+    }
+
+    update(settings: ScratchblocksSettings) {
+        this.settings = settings;
+    }
+
+    patch(settings: Partial<ScratchblocksSettings>) {
+        this.settings = {
+            ...this.settings,
+            ...settings,
+        };
+    }
+
+    getRenderOptions(inline = false): RenderOptions {
+        return {
+            languages: this.getRenderLanguages(),
+            style: this.settings.style,
+            scale: inline ? INLINE_SCALE : this.settings.scale,
+            inline,
+        };
+    }
+
+    getExportSettings(): ScratchblocksExportSettings {
+        return {
+            filenameTemplate: this.settings.pngFilenameTemplate,
+            exportPath: this.settings.pngExportPath,
+        };
+    }
+
+    getShowToolbar(): boolean {
+        return this.settings.showToolbar;
+    }
+
+    private getRenderLanguages(): LanguageCode[] {
+        const languageCode = this.settings.languageCode;
+
+        if (languageCode === FALLBACK_LANGUAGE) {
+            return [FALLBACK_LANGUAGE];
+        }
+
+        return [languageCode, FALLBACK_LANGUAGE];
+    }
+}
+
+export class ScratchblocksSettingsPreview {
+    constructor(
+        private readonly plugin: ScratchblocksPlugin,
+        private readonly wrapper: ScratchblocksWrapper
+    ) { }
+
+    getAvailableLanguageCodes(): LanguageCode[] {
+        return this.wrapper
+            .getLanguageCodes()
+            .filter((code) => code !== FALLBACK_LANGUAGE);
+    }
+
+    getLanguageName(languageCode: LanguageCode): string {
+        return this.wrapper.getLanguageName(languageCode);
+    }
+
+    createSVG(): SVGElement {
+        const settings = this.plugin.getSettings();
+        const command = this.wrapper.getGreenFlagCommand(settings.languageCode);
+
+        return this.wrapper.createSVGElement(command, {
+            languages: [settings.languageCode],
+            style: settings.style,
+            scale: settings.scale,
+        });
+    }
+}
 
 export class ScratchblocksSettingTab extends PluginSettingTab {
     plugin: ScratchblocksPlugin;
+    preview: ScratchblocksSettingsPreview;
     stylePreviewDiv: HTMLDivElement | null = null;
 
-    constructor(app: App, plugin: ScratchblocksPlugin) {
+    constructor(
+        app: App,
+        plugin: ScratchblocksPlugin,
+        preview: ScratchblocksSettingsPreview
+    ) {
         super(app, plugin);
         this.plugin = plugin;
+        this.preview = preview;
     }
 
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
 
-        const availableLanguages = (
-            Object.keys(scratchblocks.allLanguages) as LanguageCode[]
-        ).filter((code) => code !== "en");
+        const settings = this.plugin.getSettings();
+        const availableLanguages = this.preview.getAvailableLanguageCodes();
 
         containerEl.createEl("h3", { text: "Display" });
 
@@ -33,10 +125,9 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             .setDesc("Show export and copy buttons above rendered Scratch blocks")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.plugin.settings.showToolbar)
+                    .setValue(settings.showToolbar)
                     .onChange(async (value) => {
-                        this.plugin.settings.showToolbar = value;
-                        await this.plugin.saveSettings();
+                        await this.plugin.patchSettings({ showToolbar: value });
 
                         this.plugin.refreshMarkdownViews();
                     })
@@ -51,17 +142,15 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 dropdown.addOption("en", "English");
 
                 availableLanguages.sort().forEach((code) => {
-                    const langData = scratchblocks.allLanguages[code];
-                    const langName = langData?.name || code;
-
-                    dropdown.addOption(code, langName);
+                    dropdown.addOption(code, this.preview.getLanguageName(code));
                 });
 
                 dropdown
-                    .setValue(this.plugin.settings.languageCode)
+                    .setValue(settings.languageCode)
                     .onChange(async (value) => {
-                        this.plugin.settings.languageCode = value as LanguageCode;
-                        await this.plugin.saveSettings();
+                        await this.plugin.patchSettings({
+                            languageCode: value as LanguageCode,
+                        });
 
                         this.updateStylePreview();
                         this.plugin.refreshMarkdownViews();
@@ -76,10 +165,11 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .addOption("scratch2", "Scratch 2")
                     .addOption("scratch3", "Scratch 3")
                     .addOption("scratch3-high-contrast", "Scratch 3 High Contrast")
-                    .setValue(this.plugin.settings.style)
+                    .setValue(settings.style)
                     .onChange(async (value) => {
-                        this.plugin.settings.style = value as ScratchblocksStyle;
-                        await this.plugin.saveSettings();
+                        await this.plugin.patchSettings({
+                            style: value as ScratchblocksStyle,
+                        });
 
                         this.updateStylePreview();
                         this.plugin.refreshMarkdownViews();
@@ -92,11 +182,10 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             .addSlider((slider) =>
                 slider
                     .setLimits(0.5, 2, 0.1)
-                    .setValue(this.plugin.settings.scale)
+                    .setValue(settings.scale)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
-                        this.plugin.settings.scale = value;
-                        await this.plugin.saveSettings();
+                        await this.plugin.patchSettings({ scale: value });
 
                         this.updateStylePreview();
                         this.plugin.refreshMarkdownViews();
@@ -108,6 +197,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             .settingEl.createDiv({
                 cls: "scratchblocks-style-preview",
             });
+        this.updateStylePreview();
 
         containerEl.createEl("h3", { text: "Exporting" });
 
@@ -117,10 +207,11 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             .addText((text) =>
                 text
                     .setPlaceholder("scratchblocks_{firstLine}")
-                    .setValue(this.plugin.settings.pngFilenameTemplate)
+                    .setValue(settings.pngFilenameTemplate)
                     .onChange(async (value) => {
-                        this.plugin.settings.pngFilenameTemplate = value;
-                        await this.plugin.saveSettings();
+                        await this.plugin.patchSettings({
+                            pngFilenameTemplate: value,
+                        });
                     })
             );
 
@@ -131,37 +222,19 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 dropdown
                     .addOption("ask", "Ask / default download")
                     .addOption("current", "Current note folder")
-                    .setValue(this.plugin.settings.pngExportPath)
+                    .setValue(settings.pngExportPath)
                     .onChange(async (value) => {
-                        this.plugin.settings.pngExportPath =
-                            value as ScratchblocksPNGExportPath;
-                        await this.plugin.saveSettings();
+                        await this.plugin.patchSettings({
+                            pngExportPath: value as ScratchblocksPNGExportPath,
+                        });
                     })
             );
-
-        this.updateStylePreview();
     }
 
     updateStylePreview(): void {
         if (!this.stylePreviewDiv) return;
 
         this.stylePreviewDiv.empty();
-
-        const langData =
-            scratchblocks.allLanguages[this.plugin.settings.languageCode];
-
-        const greenFlagCmd =
-            langData?.commands?.EVENT_WHENFLAGCLICKED ?? "when green flag clicked";
-
-        const svg = this.plugin.renderer.getSVG(
-            greenFlagCmd,
-            {
-                languages: [this.plugin.settings.languageCode],
-                style: this.plugin.settings.style,
-                scale: this.plugin.settings.scale,
-            }
-        );
-
-        this.stylePreviewDiv.appendChild(svg);
+        this.stylePreviewDiv.appendChild(this.preview.createSVG());
     }
 }

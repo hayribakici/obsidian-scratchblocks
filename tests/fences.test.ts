@@ -1,5 +1,5 @@
 import assert from "assert/strict";
-import { getAllScratchblocksSourcesFromText } from "../src/commands";
+import { getAllScratchblocksSourcesFromText } from "../src/utils/utils";
 
 function test(name: string, run: () => void) {
     run();
@@ -20,12 +20,18 @@ test("finds all real scratchblocks fences", () => {
         "```sb",
         "say [hello]",
         "```",
+        "",
+        "~~~sb",
+        "turn cw (15) degrees",
+        "~~~",
         "after",
     ].join("\n");
 
     assert.deepEqual(getAllScratchblocksSourcesFromText(markdown), [
         "when green flag clicked",
         "say [hello]",
+        "say [hello]",
+        "turn cw (15) degrees",
     ]);
 });
 
@@ -52,6 +58,18 @@ test("supports tilde scratchblocks fences", () => {
         "~~~scratchblock",
         "when green flag clicked",
         "~~~",
+    ].join("\n");
+
+    assert.deepEqual(getAllScratchblocksSourcesFromText(markdown), [
+        "when green flag clicked",
+    ]);
+});
+
+test("supports four-backtick scratchblocks fences", () => {
+    const markdown = [
+        "````scratchblocks",
+        "when green flag clicked",
+        "````",
     ].join("\n");
 
     assert.deepEqual(getAllScratchblocksSourcesFromText(markdown), [

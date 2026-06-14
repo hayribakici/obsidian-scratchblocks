@@ -1,30 +1,29 @@
-import { LRUCache } from "./lru-cache";
-import { createRenderedBlock } from "./rendered-block";
+import { LRUCache } from "./utils/lru-cache";
 import {
   getInlineScratchblocksSource,
-} from "./commands";
-import { formatError } from "./utils";
+} from "./utils/utils";
+import { formatError } from "./utils/utils";
 
-import type { ExportOptions } from "./scratchblocks-exporter";
-import type { ScratchblocksEngine, ScratchblocksRenderOptions } from "./engine";
+import type { ScratchblocksToolbar } from "./toolbar";
+import type { ScratchblocksWrapper, RenderOptions } from "./wrapper";
 
 const MAX_INLINE_SVG_CACHE_ENTRIES = 25;
 
-interface ScratchblocksRendererExports {
+interface ScratchblocksViewOptions {
+  getRenderOptions(inline?: boolean): RenderOptions;
+  getShowToolbar(): boolean;
   exportAllPNGFromFile(sourcePath: string): Promise<void>;
-  getExportOptions(src: string, sourcePath?: string): ExportOptions;
-  getRenderOptions(inline?: boolean): ScratchblocksRenderOptions;
 }
 
-export class ScratchblocksRenderer {
+export class ScratchblocksView {
   private svgCache = new LRUCache<string, SVGElement>(
     MAX_INLINE_SVG_CACHE_ENTRIES
   );
 
   constructor(
-    private readonly engine: ScratchblocksEngine,
-    private readonly exporter: ScratchblocksRendererExports,
-    private readonly getShowToolbar: () => boolean
+    private readonly wrapper: ScratchblocksWrapper,
+    private readonly toolbar: ScratchblocksToolbar,
+    private readonly options: ScratchblocksViewOptions
   ) {}
 
   renderInlineCode(src: string): HTMLElement {
@@ -67,12 +66,16 @@ export class ScratchblocksRenderer {
     sourcePath: string
   ) {
     try {
-      const svg = this.engine.getSVG(src, this.exporter.getRenderOptions());
+      const svg = this.wrapper.createSVGElement(
+        src,
+        this.options.getRenderOptions()
+      );
 
-      const rendered = createRenderedBlock(svg, {
-        ...this.exporter.getExportOptions(src, sourcePath),
-        exportAllPNG: () => this.exporter.exportAllPNGFromFile(sourcePath),
-        showToolbar: this.getShowToolbar(),
+      const rendered = this.toolbar.wrapWithToolBarIfEnabled(svg, {
+        source: src,
+        sourcePath,
+        exportAllPNG: () => this.options.exportAllPNGFromFile(sourcePath),
+        showToolbar: this.options.getShowToolbar(),
       });
 
       el.replaceWith(rendered);
@@ -85,7 +88,7 @@ export class ScratchblocksRenderer {
   }
 
   private getInlineSVG(src: string): SVGElement {
-    const options = this.exporter.getRenderOptions(true);
+    const options = this.options.getRenderOptions(true);
     const cacheKey = this.getInlineSVGCacheKey(src, options);
     const cached = this.svgCache.get(cacheKey);
 
@@ -93,7 +96,7 @@ export class ScratchblocksRenderer {
       return cached.cloneNode(true) as SVGElement;
     }
 
-    const svg = this.engine.getSVG(src, options);
+    const svg = this.wrapper.createSVGElement(src, options);
 
     this.svgCache.set(cacheKey, svg.cloneNode(true) as SVGElement);
 
@@ -102,7 +105,7 @@ export class ScratchblocksRenderer {
 
   private getInlineSVGCacheKey(
     src: string,
-    options: ScratchblocksRenderOptions
+    options: RenderOptions
   ): string {
     return JSON.stringify({
       src,

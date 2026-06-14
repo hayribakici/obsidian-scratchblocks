@@ -1,5 +1,5 @@
 import assert from "assert/strict";
-import { LRUCache } from "../src/lru-cache";
+import { LRUCache } from "../src/utils/lru-cache";
 
 function test(name: string, run: () => void) {
     run();
