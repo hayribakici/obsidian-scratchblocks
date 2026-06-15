@@ -33,7 +33,7 @@ export class ScratchblocksExporter {
   async copyPNG(src: string) {
     try {
       await copyPNGBlobToClipboard(
-        await this.wrapper.createPNGBlob(src, this.settings.getRenderOptions())
+        await this.wrapper.createPNGBlob(src, this.settings.getBlockRenderOptions())
       );
     } catch (error) {
       new Notice(`Scratchblocks PNG copy failed: ${formatError(error)}`);
@@ -96,9 +96,9 @@ export class ScratchblocksExporter {
       exportPath: settings.exportPath,
       filenameTemplate: settings.filenameTemplate,
       firstLine: getFirstLine(src),
-      pngBlob: () => this.wrapper.createPNGBlob(src, this.settings.getRenderOptions()),
+      pngBlob: () => this.wrapper.createPNGBlob(src, this.settings.getBlockRenderOptions()),
       svgBlob: () =>
-        new Blob([this.wrapper.createSVGString(src, this.settings.getRenderOptions())], {
+        new Blob([this.wrapper.createSVGString(src, this.settings.getBlockRenderOptions())], {
           type: SVG_MIME_TYPE,
         }),
       sourcePath,

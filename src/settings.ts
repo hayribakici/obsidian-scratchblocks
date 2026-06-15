@@ -1,13 +1,14 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 
 import type ScratchblocksPlugin from "./main";
-import type { RenderOptions } from "./wrapper";
 import type { ScratchblocksWrapper } from "./wrapper";
 
 import type {
     LanguageCode,
-    ScratchblocksPNGExportPath,
-    ScratchblocksSettings,
+    ScratchblocksLocalSettings,
+    ScratchblocksRenderOptions,
+    ScratchblocksPNGExportPath as ScratchblocksPngExportPath,
+    ScratchblocksGlobalSettings,
     ScratchblocksStyle,
 } from "./utils/types";
 
@@ -16,33 +17,50 @@ const INLINE_SCALE = 0.4;
 
 export interface ScratchblocksExportSettings {
     filenameTemplate: string;
-    exportPath: ScratchblocksPNGExportPath;
+    exportPath: ScratchblocksPngExportPath;
 }
 
 export class ScratchblocksSettingsManager {
-    constructor(private settings: ScratchblocksSettings) { }
+    constructor(private settings: ScratchblocksGlobalSettings) { }
 
-    get(): ScratchblocksSettings {
+    get(): ScratchblocksGlobalSettings {
         return this.settings;
     }
 
-    update(settings: ScratchblocksSettings) {
+    update(settings: ScratchblocksGlobalSettings) {
         this.settings = settings;
     }
 
-    patch(settings: Partial<ScratchblocksSettings>) {
+    patch(settings: Partial<ScratchblocksGlobalSettings>) {
         this.settings = {
             ...this.settings,
             ...settings,
         };
     }
 
-    getRenderOptions(inline = false): RenderOptions {
+    getBlockRenderOptions(
+        localSettings: ScratchblocksLocalSettings = {}
+    ): ScratchblocksRenderOptions {
+        const renderSettings = this.getRenderSettings(localSettings);
+
         return {
-            languages: this.getRenderLanguages(),
-            style: this.settings.style,
-            scale: inline ? INLINE_SCALE : this.settings.scale,
-            inline,
+            languages: this.getRenderLanguages(renderSettings.languageCode),
+            style: renderSettings.style,
+            scale: renderSettings.scale,
+            inline: false,
+        };
+    }
+
+    getInlineRenderOptions(
+        localSettings: ScratchblocksLocalSettings = {}
+    ): ScratchblocksRenderOptions {
+        const renderSettings = this.getRenderSettings(localSettings);
+
+        return {
+            languages: this.getRenderLanguages(renderSettings.languageCode),
+            style: renderSettings.style,
+            scale: INLINE_SCALE,
+            inline: true,
         };
     }
 
@@ -57,9 +75,15 @@ export class ScratchblocksSettingsManager {
         return this.settings.showToolbar;
     }
 
-    private getRenderLanguages(): LanguageCode[] {
-        const languageCode = this.settings.languageCode;
+    private getRenderSettings(localSettings: ScratchblocksLocalSettings) {
+        return {
+            languageCode: localSettings.languageCode ?? this.settings.languageCode,
+            style: localSettings.style ?? this.settings.style,
+            scale: localSettings.scale ?? this.settings.scale,
+        };
+    }
 
+    private getRenderLanguages(languageCode: LanguageCode): LanguageCode[] {
         if (languageCode === FALLBACK_LANGUAGE) {
             return [FALLBACK_LANGUAGE];
         }
@@ -84,7 +108,7 @@ export class ScratchblocksSettingsPreview {
         return this.wrapper.getLanguageName(languageCode);
     }
 
-    createSVG(): SVGElement {
+    createSvg(): SVGElement {
         const settings = this.plugin.getSettings();
         const command = this.wrapper.getGreenFlagCommand(settings.languageCode);
 
@@ -225,7 +249,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .setValue(settings.pngExportPath)
                     .onChange(async (value) => {
                         await this.plugin.patchSettings({
-                            pngExportPath: value as ScratchblocksPNGExportPath,
+                            pngExportPath: value as ScratchblocksPngExportPath,
                         });
                     })
             );
@@ -235,6 +259,6 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
         if (!this.stylePreviewDiv) return;
 
         this.stylePreviewDiv.empty();
-        this.stylePreviewDiv.appendChild(this.preview.createSVG());
+        this.stylePreviewDiv.appendChild(this.preview.createSvg());
     }
 }

@@ -5,12 +5,14 @@ import {
 import { formatError } from "./utils/utils";
 
 import type { ScratchblocksToolbar } from "./toolbar";
-import type { ScratchblocksWrapper, RenderOptions } from "./wrapper";
+import type { ScratchblocksWrapper } from "./wrapper";
+import type { ScratchblocksRenderOptions } from "./utils/types";
 
 const MAX_INLINE_SVG_CACHE_ENTRIES = 25;
 
 interface ScratchblocksViewOptions {
-  getRenderOptions(inline?: boolean): RenderOptions;
+  getBlockRenderOptions(): ScratchblocksRenderOptions;
+  getInlineRenderOptions(): ScratchblocksRenderOptions;
   getShowToolbar(): boolean;
   exportAllPNGFromFile(sourcePath: string): Promise<void>;
 }
@@ -68,7 +70,7 @@ export class ScratchblocksView {
     try {
       const svg = this.wrapper.createSVGElement(
         src,
-        this.options.getRenderOptions()
+        this.options.getBlockRenderOptions()
       );
 
       const rendered = this.toolbar.wrapWithToolBarIfEnabled(svg, {
@@ -88,7 +90,7 @@ export class ScratchblocksView {
   }
 
   private getInlineSVG(src: string): SVGElement {
-    const options = this.options.getRenderOptions(true);
+    const options = this.options.getInlineRenderOptions();
     const cacheKey = this.getInlineSVGCacheKey(src, options);
     const cached = this.svgCache.get(cacheKey);
 
@@ -105,7 +107,7 @@ export class ScratchblocksView {
 
   private getInlineSVGCacheKey(
     src: string,
-    options: RenderOptions
+    options: ScratchblocksRenderOptions
   ): string {
     return JSON.stringify({
       src,

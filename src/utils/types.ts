@@ -9,11 +9,24 @@ export type ScratchblocksStyle =
 
 export type ScratchblocksPNGExportPath = "ask" | "current";
 
-export interface ScratchblocksSettings {
+export interface ScratchblocksLocalSettings {
+    languageCode?: LanguageCode;
+    style?: ScratchblocksStyle;
+    scale?: number;
+}
+
+export interface ScratchblocksGlobalSettings {
     languageCode: LanguageCode;
     style: ScratchblocksStyle;
     scale: number;
     showToolbar: boolean;
     pngFilenameTemplate: string;
     pngExportPath: ScratchblocksPNGExportPath;
+}
+
+export interface ScratchblocksRenderOptions {
+    languages: LanguageCode[];
+    style: ScratchblocksStyle;
+    scale: number;
+    inline?: boolean;
 }

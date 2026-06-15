@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin } from "obsidian";
+import { MarkdownView, Plugin, FileManager } from "obsidian";
 
 import {
   ScratchblocksSettingTab,
@@ -17,10 +17,10 @@ import {
   getScratchblocksSource,
 } from "./utils/utils";
 
-import type { LanguageCode, ScratchblocksSettings } from "./utils/types";
+import type { LanguageCode, ScratchblocksGlobalSettings } from "./utils/types";
 import type { Menu } from "obsidian";
 
-const DEFAULT_SETTINGS: ScratchblocksSettings = {
+const DEFAULT_SETTINGS: ScratchblocksGlobalSettings = {
   languageCode: "en" as LanguageCode,
   style: "scratch3",
   scale: 1,
@@ -61,8 +61,10 @@ export default class ScratchblocksPlugin extends Plugin {
       this.wrapper,
       this.scratchblocksToolbar,
       {
-        getRenderOptions: (inline?: boolean) =>
-          this.settingsManager.getRenderOptions(inline),
+        getBlockRenderOptions: () =>
+          this.settingsManager.getBlockRenderOptions(),
+        getInlineRenderOptions: () =>
+          this.settingsManager.getInlineRenderOptions(),
         getShowToolbar: () => this.settingsManager.getShowToolbar(),
         exportAllPNGFromFile: (sourcePath: string) =>
           this.scratchblocksExporter.exportAllPNGFromFile(sourcePath),
@@ -77,6 +79,7 @@ export default class ScratchblocksPlugin extends Plugin {
     this.addSettingTab(
       new ScratchblocksSettingTab(this.app, this, this.settingsPreview)
     );
+    // this.app.fileManager.processFrontMatter(this.app.vault.fi)
   }
 
   private registerScratchblocksProcessors() {
@@ -245,16 +248,11 @@ export default class ScratchblocksPlugin extends Plugin {
     await this.saveData(this.settingsManager.get());
   }
 
-  getSettings(): ScratchblocksSettings {
+  getSettings(): ScratchblocksGlobalSettings {
     return this.settingsManager.get();
   }
 
-  async updateSettings(settings: ScratchblocksSettings) {
-    this.settingsManager.update(settings);
-    await this.saveSettings();
-  }
-
-  async patchSettings(settings: Partial<ScratchblocksSettings>) {
+  async patchSettings(settings: Partial<ScratchblocksGlobalSettings>) {
     this.settingsManager.patch(settings);
     await this.saveSettings();
   }

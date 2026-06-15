@@ -1,13 +1,6 @@
 import scratchblocks from "scratchblocks";
 import allLanguages from "scratchblocks/locales/all.js";
-import type { LanguageCode, ScratchblocksStyle } from "./utils/types";
-
-export interface RenderOptions {
-  languages: LanguageCode[];
-  style: ScratchblocksStyle;
-  scale: number;
-  inline?: boolean;
-}
+import type { LanguageCode, ScratchblocksRenderOptions } from "./utils/types";
 
 interface ScratchblocksView {
   render(): SVGElement;
@@ -47,7 +40,7 @@ export class ScratchblocksWrapper {
     return Boolean(scratchblocks.allLanguages[languageCode]);
   }
 
-  createSVGElement(src: string, options: RenderOptions): SVGElement {
+  createSVGElement(src: string, options: ScratchblocksRenderOptions): SVGElement {
     const parsed = scratchblocks.parse(src, options);
 
     return scratchblocks.render(parsed, {
@@ -57,7 +50,7 @@ export class ScratchblocksWrapper {
     });
   }
 
-  createSVGString(src: string, options: RenderOptions): string {
+  createSVGString(src: string, options: ScratchblocksRenderOptions): string {
     const view = this.createView(src, options);
 
     view.render();
@@ -65,7 +58,7 @@ export class ScratchblocksWrapper {
     return view.exportSVGString();
   }
 
-  async createPNGBlob(src: string, options: RenderOptions): Promise<Blob> {
+  async createPNGBlob(src: string, options: ScratchblocksRenderOptions): Promise<Blob> {
     const view = this.createView(src, options);
 
     view.render();
@@ -91,7 +84,7 @@ export class ScratchblocksWrapper {
     });
   }
 
-  private createView(src: string, options: RenderOptions): ScratchblocksView {
+  private createView(src: string, options: ScratchblocksRenderOptions): ScratchblocksView {
     const parsed = scratchblocks.parse(src, options);
 
     return scratchblocks.newView(parsed, {
