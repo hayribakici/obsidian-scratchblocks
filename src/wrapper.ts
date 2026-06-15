@@ -40,7 +40,7 @@ export class ScratchblocksWrapper {
     return Boolean(scratchblocks.allLanguages[languageCode]);
   }
 
-  createSVGElement(src: string, options: ScratchblocksRenderOptions): SVGElement {
+  createSvgElement(src: string, options: ScratchblocksRenderOptions): SVGElement {
     const parsed = scratchblocks.parse(src, options);
 
     return scratchblocks.render(parsed, {

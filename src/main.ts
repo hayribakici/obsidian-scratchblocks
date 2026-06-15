@@ -17,7 +17,7 @@ import {
   getScratchblocksSource,
 } from "./utils/utils";
 
-import type { LanguageCode, ScratchblocksGlobalSettings } from "./utils/types";
+import type { LanguageCode, ScratchblocksGlobalSettings, ScratchblocksLocalSettings } from "./utils/types";
 import type { Menu } from "obsidian";
 
 const DEFAULT_SETTINGS: ScratchblocksGlobalSettings = {
@@ -61,10 +61,10 @@ export default class ScratchblocksPlugin extends Plugin {
       this.wrapper,
       this.scratchblocksToolbar,
       {
-        getBlockRenderOptions: () =>
-          this.settingsManager.getBlockRenderOptions(),
-        getInlineRenderOptions: () =>
-          this.settingsManager.getInlineRenderOptions(),
+        getBlockRenderOptions: (localSettings) =>
+          this.settingsManager.getBlockRenderOptions(localSettings),
+        getInlineRenderOptions: (localSettings) =>
+          this.settingsManager.getInlineRenderOptions(localSettings),
         getShowToolbar: () => this.settingsManager.getShowToolbar(),
         exportAllPNGFromFile: (sourcePath: string) =>
           this.scratchblocksExporter.exportAllPNGFromFile(sourcePath),
@@ -84,9 +84,10 @@ export default class ScratchblocksPlugin extends Plugin {
 
   private registerScratchblocksProcessors() {
     fencedLanguagesPrefixes.forEach((elem, _, __) => {
-      this.registerMarkdownCodeBlockProcessor(elem, (src, el, ctx) =>
-        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath)
-      )
+      this.registerMarkdownCodeBlockProcessor(elem, (src, el, ctx) => {
+        const localSettings = this.getLocalSettings(ctx.sourcePath);
+        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath, localSettings);
+      })
     });
     this.registerMarkdownPostProcessor((el) =>
       this.scratchblocksView.renderInlineCodeElements(el)
@@ -94,7 +95,7 @@ export default class ScratchblocksPlugin extends Plugin {
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
-        (src) => this.scratchblocksView.renderInlineCode(src)
+        (src) => this.scratchblocksView.renderInlineCode(src, {})
       )
     );
   }
@@ -250,6 +251,15 @@ export default class ScratchblocksPlugin extends Plugin {
 
   getSettings(): ScratchblocksGlobalSettings {
     return this.settingsManager.get();
+  }
+
+  getLocalSettings(path: string): ScratchblocksLocalSettings {
+    const fm = this.app.metadataCache.getCache(path)?.frontmatter;
+    return {
+      languageCode: fm?.['sb-lang'],
+      style: fm?.['sb-style'],
+      scale: fm?.['sb-scale']
+    };
   }
 
   async patchSettings(settings: Partial<ScratchblocksGlobalSettings>) {

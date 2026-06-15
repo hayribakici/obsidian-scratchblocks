@@ -112,7 +112,7 @@ export class ScratchblocksSettingsPreview {
         const settings = this.plugin.getSettings();
         const command = this.wrapper.getGreenFlagCommand(settings.languageCode);
 
-        return this.wrapper.createSVGElement(command, {
+        return this.wrapper.createSvgElement(command, {
             languages: [settings.languageCode],
             style: settings.style,
             scale: settings.scale,

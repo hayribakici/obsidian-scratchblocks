@@ -6,13 +6,13 @@ import { formatError } from "./utils/utils";
 
 import type { ScratchblocksToolbar } from "./toolbar";
 import type { ScratchblocksWrapper } from "./wrapper";
-import type { ScratchblocksRenderOptions } from "./utils/types";
+import type { ScratchblocksLocalSettings, ScratchblocksRenderOptions } from "./utils/types";
 
 const MAX_INLINE_SVG_CACHE_ENTRIES = 25;
 
 interface ScratchblocksViewOptions {
-  getBlockRenderOptions(): ScratchblocksRenderOptions;
-  getInlineRenderOptions(): ScratchblocksRenderOptions;
+  getBlockRenderOptions(localSettings: ScratchblocksLocalSettings): ScratchblocksRenderOptions;
+  getInlineRenderOptions(localSettings: ScratchblocksLocalSettings): ScratchblocksRenderOptions;
   getShowToolbar(): boolean;
   exportAllPNGFromFile(sourcePath: string): Promise<void>;
 }
@@ -26,15 +26,15 @@ export class ScratchblocksView {
     private readonly wrapper: ScratchblocksWrapper,
     private readonly toolbar: ScratchblocksToolbar,
     private readonly options: ScratchblocksViewOptions
-  ) {}
+  ) { }
 
-  renderInlineCode(src: string): HTMLElement {
+  renderInlineCode(src: string, localSettings: ScratchblocksLocalSettings): HTMLElement {
     const container = createSpan({
       cls: "scratchblocks-inline-rendered",
     });
 
     try {
-      const svg = this.getInlineSVG(src);
+      const svg = this.getInlineSvg(src, localSettings);
       container.appendChild(svg);
     } catch (error) {
       container.createSpan({
@@ -62,15 +62,11 @@ export class ScratchblocksView {
     });
   }
 
-  renderCodeBlock(
-    src: string,
-    el: HTMLElement,
-    sourcePath: string
-  ) {
+  renderCodeBlock(src: string, el: HTMLElement, sourcePath: string, localSettings: ScratchblocksLocalSettings) {
     try {
-      const svg = this.wrapper.createSVGElement(
+      const svg = this.wrapper.createSvgElement(
         src,
-        this.options.getBlockRenderOptions()
+        this.options.getBlockRenderOptions(localSettings)
       );
 
       const rendered = this.toolbar.wrapWithToolBarIfEnabled(svg, {
@@ -89,23 +85,23 @@ export class ScratchblocksView {
     }
   }
 
-  private getInlineSVG(src: string): SVGElement {
-    const options = this.options.getInlineRenderOptions();
-    const cacheKey = this.getInlineSVGCacheKey(src, options);
+  private getInlineSvg(src: string, localSettings: ScratchblocksLocalSettings): SVGElement {
+    const options = this.options.getInlineRenderOptions(localSettings);
+    const cacheKey = this.getInlineSvgCacheKey(src, options);
     const cached = this.svgCache.get(cacheKey);
 
     if (cached) {
       return cached.cloneNode(true) as SVGElement;
     }
 
-    const svg = this.wrapper.createSVGElement(src, options);
+    const svg = this.wrapper.createSvgElement(src, options);
 
     this.svgCache.set(cacheKey, svg.cloneNode(true) as SVGElement);
 
     return svg;
   }
 
-  private getInlineSVGCacheKey(
+  private getInlineSvgCacheKey(
     src: string,
     options: ScratchblocksRenderOptions
   ): string {
