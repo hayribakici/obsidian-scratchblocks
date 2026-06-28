@@ -5,19 +5,19 @@ import type { ScratchblocksExporter } from "./exporter";
 export interface RenderedBlockOptions {
   source: string;
   sourcePath: string;
-  showToolbar: boolean;
   exportAllPNG?: () => Promise<void>;
 }
 
 export class ScratchblocksToolbar {
-  constructor(private readonly exporter: ScratchblocksExporter) { }
+  constructor(private readonly exporter: ScratchblocksExporter, 
+    private readonly showToolbar: () => boolean) { }
 
-  wrapWithToolBarIfEnabled(svg: SVGElement, options: RenderedBlockOptions): HTMLElement {
+  wrap(svg: SVGElement, options: RenderedBlockOptions): HTMLElement {
     const container = createDiv({
       cls: "scratchblocks-rendered",
     });
 
-    if (options.showToolbar) {
+    if (this.showToolbar()) {
       const toolbar = container.createDiv({
         cls: "scratchblocks-actions",
       });

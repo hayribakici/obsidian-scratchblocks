@@ -52,10 +52,7 @@ export function createBacktickedTextExtension(
   );
 }
 
-export function findBacktickedText(
-  lineText: string,
-  lineNumber = 1
-): BacktickedText[] {
+export function findBacktickedText(lineText: string, lineNumber = 1): BacktickedText[] {
   if (lineText.trim().startsWith("```")) {
     return [];
   }

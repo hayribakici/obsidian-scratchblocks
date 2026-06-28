@@ -10,14 +10,13 @@ import type { ScratchblocksLocalSettings, ScratchblocksRenderOptions } from "./u
 
 const MAX_INLINE_SVG_CACHE_ENTRIES = 25;
 
-interface ScratchblocksViewOptions {
+interface ScratchblocksRenderOptionsProvider {
   getBlockRenderOptions(localSettings: ScratchblocksLocalSettings): ScratchblocksRenderOptions;
   getInlineRenderOptions(localSettings: ScratchblocksLocalSettings): ScratchblocksRenderOptions;
-  getShowToolbar(): boolean;
   exportAllPNGFromFile(sourcePath: string): Promise<void>;
 }
 
-export class ScratchblocksView {
+export class ScratchblocksViewController {
   private svgCache = new LRUCache<string, SVGElement>(
     MAX_INLINE_SVG_CACHE_ENTRIES
   );
@@ -25,7 +24,7 @@ export class ScratchblocksView {
   constructor(
     private readonly wrapper: ScratchblocksWrapper,
     private readonly toolbar: ScratchblocksToolbar,
-    private readonly options: ScratchblocksViewOptions
+    private readonly optionsProvider: ScratchblocksRenderOptionsProvider
   ) { }
 
   renderInlineCode(src: string, localSettings: ScratchblocksLocalSettings): HTMLElement {
@@ -66,14 +65,13 @@ export class ScratchblocksView {
     try {
       const svg = this.wrapper.createSvgElement(
         src,
-        this.options.getBlockRenderOptions(localSettings)
+        this.optionsProvider.getBlockRenderOptions(localSettings)
       );
 
-      const rendered = this.toolbar.wrapWithToolBarIfEnabled(svg, {
+      const rendered = this.toolbar.wrap(svg, {
         source: src,
         sourcePath,
-        exportAllPNG: () => this.options.exportAllPNGFromFile(sourcePath),
-        showToolbar: this.options.getShowToolbar(),
+        exportAllPNG: () => this.optionsProvider.exportAllPNGFromFile(sourcePath)
       });
 
       el.replaceWith(rendered);
@@ -86,7 +84,7 @@ export class ScratchblocksView {
   }
 
   private getInlineSvg(src: string, localSettings: ScratchblocksLocalSettings): SVGElement {
-    const options = this.options.getInlineRenderOptions(localSettings);
+    const options = this.optionsProvider.getInlineRenderOptions(localSettings);
     const cacheKey = this.getInlineSvgCacheKey(src, options);
     const cached = this.svgCache.get(cacheKey);
 

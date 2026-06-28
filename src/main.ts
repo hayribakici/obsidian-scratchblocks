@@ -9,7 +9,7 @@ import { ScratchblocksWrapper } from "./wrapper";
 import { createBacktickedTextExtension } from "./editor-extension";
 import { ScratchblocksExporter } from "./exporter";
 import { ScratchblocksToolbar } from "./toolbar";
-import { ScratchblocksView } from "./view";
+import { ScratchblocksViewController } from "./viewcontroller";
 import {
   getAllScratchblocksSources,
   getInlineScratchblocksSource,
@@ -38,7 +38,7 @@ export default class ScratchblocksPlugin extends Plugin {
   private settingsPreview: ScratchblocksSettingsPreview;
   private scratchblocksExporter: ScratchblocksExporter;
   private scratchblocksToolbar: ScratchblocksToolbar;
-  private scratchblocksView: ScratchblocksView;
+  private scratchblocksView: ScratchblocksViewController;
 
   async onload() {
     this.wrapper = new ScratchblocksWrapper();
@@ -55,9 +55,10 @@ export default class ScratchblocksPlugin extends Plugin {
       this.settingsManager
     );
     this.scratchblocksToolbar = new ScratchblocksToolbar(
-      this.scratchblocksExporter
+      this.scratchblocksExporter,
+      () => this.settingsManager.getShowToolbar(),
     );
-    this.scratchblocksView = new ScratchblocksView(
+    this.scratchblocksView = new ScratchblocksViewController(
       this.wrapper,
       this.scratchblocksToolbar,
       {
@@ -65,7 +66,6 @@ export default class ScratchblocksPlugin extends Plugin {
           this.settingsManager.getBlockRenderOptions(localSettings),
         getInlineRenderOptions: (localSettings) =>
           this.settingsManager.getInlineRenderOptions(localSettings),
-        getShowToolbar: () => this.settingsManager.getShowToolbar(),
         exportAllPNGFromFile: (sourcePath: string) =>
           this.scratchblocksExporter.exportAllPNGFromFile(sourcePath),
       }
@@ -89,9 +89,9 @@ export default class ScratchblocksPlugin extends Plugin {
         this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath, localSettings);
       })
     });
-    this.registerMarkdownPostProcessor((el) =>
-      this.scratchblocksView.renderInlineCodeElements(el)
-    );
+    // this.registerMarkdownPostProcessor((el) =>
+    //   this.scratchblocksView.renderInlineCodeElements(el)
+    // );
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
