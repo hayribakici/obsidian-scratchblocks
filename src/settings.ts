@@ -15,6 +15,12 @@ import type {
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
 
+const DEFAULT_LOCAL_SETTINGS: ScratchblocksLocalSettings = {
+    languageCode: "en" as LanguageCode,
+    style: "scratch3",
+    scale: 1.0,
+};
+
 export interface ScratchblocksExportSettings {
     filenameTemplate: string;
     exportPath: ScratchblocksPngExportPath;
@@ -39,7 +45,7 @@ export class ScratchblocksSettingsManager {
     }
 
     getBlockRenderOptions(
-        localSettings: ScratchblocksLocalSettings = {}
+        localSettings: ScratchblocksLocalSettings = DEFAULT_LOCAL_SETTINGS
     ): ScratchblocksRenderOptions {
         const renderSettings = this.getRenderSettings(localSettings);
 
@@ -52,7 +58,7 @@ export class ScratchblocksSettingsManager {
     }
 
     getInlineRenderOptions(
-        localSettings: ScratchblocksLocalSettings = {}
+        localSettings: ScratchblocksLocalSettings = DEFAULT_LOCAL_SETTINGS
     ): ScratchblocksRenderOptions {
         const renderSettings = this.getRenderSettings(localSettings);
 
