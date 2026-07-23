@@ -1,7 +1,6 @@
 import { Notice, TFile } from "obsidian";
 
-import { getAllScratchblocksSourcesFromText } from "./utils/utils";
-import { formatError } from "./utils/utils";
+import { formatError, getAllScratchblocksSourcesFromText } from "./utils/utils";
 
 import type { Vault } from "obsidian";
 import type { ScratchblocksWrapper } from "./wrapper";
@@ -42,7 +41,7 @@ export class ScratchblocksExporter {
 
   async exportSVG(src: string, sourcePath?: string) {
     try {
-      var options = this.getExportOptions(src, sourcePath);
+      const options = this.getExportOptions(src, sourcePath);
       await exportBlob(options.svgBlob(), options, "svg");
     } catch (error) {
       new Notice(`Scratchblocks SVG export failed: ${formatError(error)}`);
@@ -59,7 +58,9 @@ export class ScratchblocksExporter {
 
   async exportAllPNG(sources: string[], sourcePath?: string) {
     try {
-      var options = sources.map((src) => this.getExportOptions(src, sourcePath));
+      const options = sources.map((src) =>
+        this.getExportOptions(src, sourcePath)
+      );
       for (const option of options) {
         await this.exportScratchblocksPNG(option);
       }

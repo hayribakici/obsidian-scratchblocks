@@ -1,8 +1,5 @@
 import { LRUCache } from "./utils/lru-cache";
-import {
-  getInlineScratchblocksSource,
-} from "./utils/utils";
-import { formatError } from "./utils/utils";
+import { formatError, getInlineScratchblocksSource } from "./utils/utils";
 
 import type { ScratchblocksToolbar } from "./toolbar";
 import type { ScratchblocksWrapper, RenderOptions } from "./wrapper";
