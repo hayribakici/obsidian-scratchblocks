@@ -118,7 +118,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
         const settings = this.plugin.getSettings();
         const availableLanguages = this.preview.getAvailableLanguageCodes();
 
-        containerEl.createEl("h3", { text: "Display" });
+        new Setting(containerEl).setName("Display").setHeading();
 
         new Setting(containerEl)
             .setName("Show toolbar")
@@ -133,7 +133,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     })
             );
 
-        containerEl.createEl("h3", { text: "Rendering" });
+        new Setting(containerEl).setName("Rendering").setHeading();
 
         new Setting(containerEl)
             .setName("Language")
@@ -149,7 +149,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .setValue(settings.languageCode)
                     .onChange(async (value) => {
                         await this.plugin.patchSettings({
-                            languageCode: value as LanguageCode,
+                            languageCode: value,
                         });
 
                         this.updateStylePreview();
@@ -183,7 +183,6 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 slider
                     .setLimits(0.5, 2, 0.1)
                     .setValue(settings.scale)
-                    .setDynamicTooltip()
                     .onChange(async (value) => {
                         await this.plugin.patchSettings({ scale: value });
 
@@ -199,7 +198,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             });
         this.updateStylePreview();
 
-        containerEl.createEl("h3", { text: "Exporting" });
+        new Setting(containerEl).setName("Exporting").setHeading();
 
         new Setting(containerEl)
             .setName("PNG filename template")

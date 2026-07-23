@@ -110,7 +110,7 @@ export class ScratchblocksExporter {
 }
 
 export async function copyPNGBlobToClipboard(blob: Blob) {
-  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+  if (typeof ClipboardItem === "undefined") {
     throw new Error("Copying PNG images to the clipboard is not supported");
   }
 
@@ -135,7 +135,7 @@ function getFirstLine(src: string): string {
     src
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .find(Boolean) || ""
+      .find(Boolean) ?? ""
   );
 }
 
@@ -145,8 +145,8 @@ function getExportFilename(
   extension: "png" | "svg"
 ): string {
   const filename = (template || "scratchblocks_{firstLine}")
-    .replaceAll("{firstLine}", firstLine || "block")
-    .replaceAll("{datetime}", getFilenameDateTime());
+    .replace(/\{firstLine\}/g, firstLine || "block")
+    .replace(/\{datetime\}/g, getFilenameDateTime());
   const sanitized = sanitizeFilenamePart(filename) || "scratchblocks";
 
   return `${sanitized}.${extension}`;
@@ -154,13 +154,15 @@ function getExportFilename(
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const link = createEl("a");
 
   link.href = url;
   link.download = filename;
   link.click();
 
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 async function saveBlobToSourceFolder(
@@ -225,11 +227,11 @@ function getUniqueVaultPath(vault: Vault, path: string): string {
   const base = extensionStart === -1 ? path : path.slice(0, extensionStart);
   const extension = extensionStart === -1 ? "" : path.slice(extensionStart);
   let index = 1;
-  let candidate = `${base}-${index}${extension}`;
+  let candidate = `${base}-${String(index)}${extension}`;
 
   while (vault.getAbstractFileByPath(candidate)) {
     index += 1;
-    candidate = `${base}-${index}${extension}`;
+    candidate = `${base}-${String(index)}${extension}`;
   }
 
   return candidate;

@@ -1,6 +1,4 @@
-import scratchblocks from "scratchblocks";
-
-export type LanguageCode = keyof typeof scratchblocks.allLanguages;
+export type LanguageCode = string;
 
 export type ScratchblocksStyle =
     | "scratch2"

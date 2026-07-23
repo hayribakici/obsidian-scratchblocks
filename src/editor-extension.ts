@@ -1,5 +1,5 @@
 import { Decoration, ViewPlugin, WidgetType } from "@codemirror/view";
-import type { EditorState, StateField } from "@codemirror/state";
+import type { EditorState, Range, StateField } from "@codemirror/state";
 import type { DecorationSet, EditorView, ViewUpdate } from "@codemirror/view";
 
 interface BacktickedText {
@@ -98,7 +98,7 @@ function buildBacktickedTextDecorations(
   getReplacementText: (text: string) => string | null,
   renderReplacement: (text: string) => HTMLElement
 ): DecorationSet {
-  const ranges = [];
+  const ranges: Range<Decoration>[] = [];
 
   for (const visibleRange of view.visibleRanges) {
     let line = view.state.doc.lineAt(visibleRange.from);

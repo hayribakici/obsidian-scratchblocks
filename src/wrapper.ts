@@ -29,11 +29,11 @@ export class ScratchblocksWrapper {
   }
 
   getLanguageCodes(): LanguageCode[] {
-    return Object.keys(scratchblocks.allLanguages) as LanguageCode[];
+    return Object.keys(scratchblocks.allLanguages);
   }
 
   getLanguageName(languageCode: LanguageCode): string {
-    return scratchblocks.allLanguages[languageCode]?.name || languageCode;
+    return scratchblocks.allLanguages[languageCode]?.name ?? languageCode;
   }
 
   getGreenFlagCommand(languageCode: LanguageCode): string {
@@ -71,22 +71,21 @@ export class ScratchblocksWrapper {
     view.render();
 
     return new Promise((resolve, reject) => {
-      view.exportPNG(async (url: string) => {
-        try {
-          if (!isLocalImageURL(url)) {
-            throw new Error("Refusing to fetch a non-local Scratchblocks image URL");
-          }
-
-          const response = await fetch(url);
-
-          resolve(await response.blob());
-        } catch (error) {
-          reject(error);
-        } finally {
-          if (url.startsWith("blob:")) {
-            URL.revokeObjectURL(url);
-          }
-        }
+      view.exportPNG((url: string) => {
+        void getLocalImageBlob(url)
+          .then(resolve)
+          .catch((error: unknown) => {
+            reject(
+              error instanceof Error
+                ? error
+                : new Error(`Scratchblocks PNG export failed: ${String(error)}`)
+            );
+          })
+          .finally(() => {
+            if (url.startsWith("blob:")) {
+              URL.revokeObjectURL(url);
+            }
+          });
       });
     });
   }
@@ -103,4 +102,42 @@ export class ScratchblocksWrapper {
 
 function isLocalImageURL(url: string): boolean {
   return url.startsWith("blob:") || url.startsWith("data:");
+}
+
+function getLocalImageBlob(url: string): Promise<Blob> {
+  if (!isLocalImageURL(url)) {
+    return Promise.reject(
+      new Error("Refusing to read a non-local Scratchblocks image URL")
+    );
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open("GET", url);
+    request.responseType = "blob";
+    request.addEventListener("load", () => {
+      if (request.status === 0 || (request.status >= 200 && request.status < 300)) {
+        const response: unknown = request.response;
+
+        if (response instanceof Blob) {
+          resolve(response);
+          return;
+        }
+
+        reject(new Error("Could not read Scratchblocks image blob"));
+        return;
+      }
+
+      reject(
+        new Error(
+          `Could not read Scratchblocks image URL: ${String(request.status)}`
+        )
+      );
+    });
+    request.addEventListener("error", () => {
+      reject(new Error("Could not read Scratchblocks image URL"));
+    });
+    request.send();
+  });
 }
