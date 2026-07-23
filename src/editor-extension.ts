@@ -1,4 +1,5 @@
 import { Decoration, ViewPlugin, WidgetType } from "@codemirror/view";
+import type { EditorState, StateField } from "@codemirror/state";
 import type { DecorationSet, EditorView, ViewUpdate } from "@codemirror/view";
 
 interface BacktickedText {
@@ -10,16 +11,43 @@ interface BacktickedText {
 
 export function createBacktickedTextExtension(
   getReplacementText: (text: string) => string | null,
-  renderReplacement: (text: string) => HTMLElement
+  renderReplacement: (text: string) => HTMLElement,
+  livePreviewField: StateField<boolean>
 ) {
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
       fencedLines: Set<number>;
+      livePreviewField: StateField<boolean>;
 
       constructor(view: EditorView) {
+        this.livePreviewField = livePreviewField;
         this.fencedLines = getFencedCodeBlockLines(view);
-        this.decorations = buildBacktickedTextDecorations(
+        this.decorations = this.buildDecorations(view);
+      }
+
+      update(update: ViewUpdate) {
+        if (
+          update.docChanged ||
+          update.selectionSet ||
+          update.viewportChanged ||
+          this.isLivePreview(update.startState) !==
+            this.isLivePreview(update.state)
+        ) {
+          if (update.docChanged) {
+            this.fencedLines = getFencedCodeBlockLines(update.view);
+          }
+
+          this.decorations = this.buildDecorations(update.view);
+        }
+      }
+
+      private buildDecorations(view: EditorView): DecorationSet {
+        if (!this.isLivePreview(view.state)) {
+          return Decoration.none;
+        }
+
+        return buildBacktickedTextDecorations(
           view,
           this.fencedLines,
           getReplacementText,
@@ -27,23 +55,8 @@ export function createBacktickedTextExtension(
         );
       }
 
-      update(update: ViewUpdate) {
-        if (
-          update.docChanged ||
-          update.selectionSet ||
-          update.viewportChanged
-        ) {
-          if (update.docChanged) {
-            this.fencedLines = getFencedCodeBlockLines(update.view);
-          }
-
-          this.decorations = buildBacktickedTextDecorations(
-            update.view,
-            this.fencedLines,
-            getReplacementText,
-            renderReplacement
-          );
-        }
+      private isLivePreview(state: EditorState): boolean {
+        return state.field(this.livePreviewField, false) ?? false;
       }
     },
     {

@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin } from "obsidian";
+import { MarkdownView, Plugin, editorLivePreviewField } from "obsidian";
 
 import {
   ScratchblocksSettingTab,
@@ -91,7 +91,8 @@ export default class ScratchblocksPlugin extends Plugin {
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
-        (src) => this.scratchblocksView.renderInlineCode(src)
+        (src) => this.scratchblocksView.renderInlineCode(src),
+        editorLivePreviewField
       )
     );
   }
