@@ -1,6 +1,6 @@
 {
   "name": "scratchblocks",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "Render Scratchblocks code blocks in Obsidian with language and style support.",
   "main": "main.js",
   "license": "MIT",
