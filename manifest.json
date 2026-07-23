@@ -3,7 +3,7 @@
   "name": "Scratchblocks",
   "description": "Render Scratchblocks code blocks with language and style support.",
   "author": "shabegom, hayribakici",
-  "minAppVersion": "0.12.16",
+  "minAppVersion": "1.1.0",
   "isDesktopOnly": false,
   "version": "0.0.17"
 }

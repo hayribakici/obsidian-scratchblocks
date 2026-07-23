@@ -5,7 +5,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": true
   },
-  "include": ["src/**/*.ts", "types.d.ts", "src/main.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "types.d.ts"]
 }

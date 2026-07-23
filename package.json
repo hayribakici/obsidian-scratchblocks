@@ -14,19 +14,22 @@
   "scripts": {
     "build": "obsidian-plugin build src/main.ts",
     "dev": "obsidian-plugin dev src/main.ts",
+    "lint": "eslint .",
     "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js && esbuild tests/backticked-text.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-backticked-text.test.js && node /tmp/obsidian-scratchblocks-backticked-text.test.js && esbuild tests/lru-cache.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-lru-cache.test.js && node /tmp/obsidian-scratchblocks-lru-cache.test.js"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.35.1",
-    "@typescript-eslint/parser": "^5.35.1",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.28.1",
-    "eslint": "^8.22.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-obsidianmd": "^0.4.1",
+    "globals": "^17.7.0",
     "obsidian": "obsidianmd/obsidian-api",
     "obsidian-plugin-cli": "^0.9.0",
-    "typescript": "^4.8.2"
+    "typescript": "^4.8.2",
+    "typescript-eslint": "^8.65.0"
   },
   "dependencies": {
+    "@codemirror/view": "6.38.6",
     "scratch-l10n": "6.1.97",
     "scratchblocks": "3.7.1"
   }

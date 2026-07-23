@@ -133,7 +133,7 @@ function findClosingFence(editor: Editor, startLine: number): number {
 
 function getFenceMarker(line: string): string {
   const trimmed = line.trim();
-  const match = trimmed.match(/^(`{3,}|~{3,})/);
+  const match = /^(`{3,}|~{3,})/.exec(trimmed);
 
   return match?.[1] ?? "";
 }

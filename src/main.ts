@@ -17,11 +17,11 @@ import {
   getScratchblocksSource,
 } from "./utils/utils";
 
-import type { LanguageCode, ScratchblocksSettings } from "./utils/types";
+import type { ScratchblocksSettings } from "./utils/types";
 import type { Menu } from "obsidian";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
-  languageCode: "en" as LanguageCode,
+  languageCode: "en",
   style: "scratch3",
   scale: 1,
   showToolbar: true,
@@ -29,7 +29,7 @@ const DEFAULT_SETTINGS: ScratchblocksSettings = {
   pngExportPath: "current",
 };
 
-const FALLBACK_LANGUAGE = "en" as LanguageCode;
+const FALLBACK_LANGUAGE = "en";
 const fencedLanguagesPrefixes = ['scratchblock', 'scratchblocks', 'sb'];
 
 export default class ScratchblocksPlugin extends Plugin {
@@ -81,13 +81,13 @@ export default class ScratchblocksPlugin extends Plugin {
 
   private registerScratchblocksProcessors() {
     fencedLanguagesPrefixes.forEach((language) => {
-      this.registerMarkdownCodeBlockProcessor(language, (src, el, ctx) =>
-        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath)
-      )
+      this.registerMarkdownCodeBlockProcessor(language, (src, el, ctx) => {
+        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath);
+      });
     });
-    this.registerMarkdownPostProcessor((el) =>
-      this.scratchblocksView.renderInlineCodeElements(el)
-    );
+    this.registerMarkdownPostProcessor((el) => {
+      this.scratchblocksView.renderInlineCodeElements(el);
+    });
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
@@ -100,7 +100,7 @@ export default class ScratchblocksPlugin extends Plugin {
   private registerCommands() {
     this.addCommand({
       id: "copy-png",
-      name: "Copy Scratchblocks png",
+      name: "Copy PNG",
       editorCheckCallback: (checking, editor) => {
         const src = getScratchblocksSource(editor);
 
@@ -118,7 +118,7 @@ export default class ScratchblocksPlugin extends Plugin {
 
     this.addCommand({
       id: "export-all-png",
-      name: "Export all Scratchblocks to png",
+      name: "Export all to PNG",
       editorCheckCallback: (checking, editor, info) => {
         const sources = getAllScratchblocksSources(editor);
 
@@ -136,7 +136,7 @@ export default class ScratchblocksPlugin extends Plugin {
 
     this.addCommand({
       id: "export-svg",
-      name: "Export Scratchblocks to svg",
+      name: "Export SVG",
       editorCheckCallback: (checking, editor, info) => {
         const src = getScratchblocksSource(editor);
 
@@ -195,8 +195,8 @@ export default class ScratchblocksPlugin extends Plugin {
         item
           .setTitle("Export Scratchblocks to svg")
           .setIcon("file-code")
-          .onClick(async () => {
-            await this.scratchblocksExporter.exportSVG(src, sourcePath);
+          .onClick(() => {
+            void this.scratchblocksExporter.exportSVG(src, sourcePath);
           })
       );
 
@@ -204,8 +204,8 @@ export default class ScratchblocksPlugin extends Plugin {
         item
           .setTitle("Export Scratchblocks to png")
           .setIcon("download")
-          .onClick(async () => {
-            await this.scratchblocksExporter.exportPNG(src, sourcePath);
+          .onClick(() => {
+            void this.scratchblocksExporter.exportPNG(src, sourcePath);
           })
       );
     }
@@ -215,17 +215,20 @@ export default class ScratchblocksPlugin extends Plugin {
         item
           .setTitle("Export all Scratchblocks to png")
           .setIcon("download")
-          .onClick(async () => {
-            await this.scratchblocksExporter.exportAllPNG(sources, sourcePath);
+          .onClick(() => {
+            void this.scratchblocksExporter.exportAllPNG(sources, sourcePath);
           })
       );
     }
   }
 
   async loadSettings() {
-    const loaded = await this.loadData();
+    const loaded: unknown = await this.loadData();
 
-    const settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      ...getSavedSettings(loaded),
+    };
 
     if (!this.wrapper.hasLanguage(settings.languageCode)) {
       settings.languageCode = FALLBACK_LANGUAGE;
@@ -263,9 +266,54 @@ export default class ScratchblocksPlugin extends Plugin {
   refreshMarkdownViews() {
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
       if (leaf.view instanceof MarkdownView) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (leaf as any).rebuildView();
+        const rebuildableLeaf = leaf as typeof leaf & {
+          rebuildView?: () => void;
+        };
+
+        rebuildableLeaf.rebuildView?.();
       }
     });
   }
+}
+
+function getSavedSettings(value: unknown): Partial<ScratchblocksSettings> {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  const settings: Partial<ScratchblocksSettings> = {};
+
+  if (typeof value.languageCode === "string") {
+    settings.languageCode = value.languageCode;
+  }
+
+  if (value.pngExportPath === "ask" || value.pngExportPath === "current") {
+    settings.pngExportPath = value.pngExportPath;
+  }
+
+  if (typeof value.pngFilenameTemplate === "string") {
+    settings.pngFilenameTemplate = value.pngFilenameTemplate;
+  }
+
+  if (typeof value.scale === "number") {
+    settings.scale = value.scale;
+  }
+
+  if (typeof value.showToolbar === "boolean") {
+    settings.showToolbar = value.showToolbar;
+  }
+
+  if (
+    value.style === "scratch2" ||
+    value.style === "scratch3" ||
+    value.style === "scratch3-high-contrast"
+  ) {
+    settings.style = value.style;
+  }
+
+  return settings;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }

@@ -46,8 +46,8 @@ export class ScratchblocksToolbar {
 
     setIcon(button, "copy");
 
-    button.addEventListener("click", async () => {
-      await this.runToolbarAction(
+    button.addEventListener("click", () => {
+      void this.runToolbarAction(
         button,
         "copy",
         () => this.exporter.copyPNG(src)
@@ -65,8 +65,8 @@ export class ScratchblocksToolbar {
 
     setIcon(button, "image-down");
 
-    button.addEventListener("click", async () => {
-      await this.runToolbarAction(button, "image-down", () =>
+    button.addEventListener("click", () => {
+      void this.runToolbarAction(button, "image-down", () =>
         this.exporter.exportPNG(options.source, options.sourcePath)
       );
     });
@@ -82,8 +82,8 @@ export class ScratchblocksToolbar {
 
     setIcon(button, "file-down");
 
-    button.addEventListener("click", async () => {
-      await this.runToolbarAction(button, "file-down", () =>
+    button.addEventListener("click", () => {
+      void this.runToolbarAction(button, "file-down", () =>
         this.exporter.exportSVG(options.source, options.sourcePath)
       );
     });
@@ -104,7 +104,7 @@ export class ScratchblocksToolbar {
   }
 
   private addContextMenuItems(event: MouseEvent, options: RenderedBlockOptions) {
-    const menu = Menu.forEvent(event);
+    const menu = new Menu();
 
     menu.addSeparator();
 
@@ -147,5 +147,7 @@ export class ScratchblocksToolbar {
           })
       );
     }
+
+    menu.showAtMouseEvent(event);
   }
 }

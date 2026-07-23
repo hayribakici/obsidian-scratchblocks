@@ -77,7 +77,7 @@ export class ScratchblocksView {
 
       el.replaceWith(rendered);
     } catch (error) {
-      el.createEl("div", {
+      el.createDiv({
         text: `Error: ${formatError(error)}`,
         cls: "scratchblocks-error",
       });
