@@ -4,7 +4,7 @@ import { formatError, getInlineScratchblocksSource } from "./utils/utils";
 import type { ScratchblocksToolbar } from "./toolbar";
 import type { ScratchblocksWrapper, RenderOptions } from "./wrapper";
 
-const MAX_INLINE_SVG_CACHE_ENTRIES = 25;
+const MAX_INLINE_SVG_CACHE_ENTRIES = 100;
 
 interface ScratchblocksViewOptions {
   getRenderOptions(inline?: boolean): RenderOptions;
@@ -86,7 +86,7 @@ export class ScratchblocksView {
 
   private getInlineSVG(src: string): SVGElement {
     const options = this.options.getRenderOptions(true);
-    const cacheKey = this.getInlineSVGCacheKey(src, options);
+    const cacheKey = this.getSVGCacheKey(src, options);
     const cached = this.svgCache.get(cacheKey);
 
     if (cached) {
@@ -100,7 +100,7 @@ export class ScratchblocksView {
     return svg;
   }
 
-  private getInlineSVGCacheKey(
+  private getSVGCacheKey(
     src: string,
     options: RenderOptions
   ): string {

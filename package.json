@@ -27,7 +27,7 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "scratch-l10n": "6.1.85",
-    "scratchblocks": "3.6.4"
+    "scratch-l10n": "6.1.97",
+    "scratchblocks": "3.7.1"
   }
 }
