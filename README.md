@@ -57,7 +57,7 @@ renders the above as[^1]:
 
 ## Under the hood
 
-It exposes the `scratchblocks` [library](https://scratchblocks.github.io/) at the top level of Obsidian so you can use it inside templater or other code running plugins.
+This plugin uses the [`scratchblocks-ts`](https://github.com/hayribakici/scratchblocks-ts) package for the rendering and Markdown parsing logic.
 
 ## Contributing
 
