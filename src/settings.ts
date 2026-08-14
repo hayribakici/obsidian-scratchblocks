@@ -1,11 +1,11 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 
 import type ScratchblocksPlugin from "./main";
-import type { RenderOptions } from "./wrapper";
-import type { ScratchblocksWrapper } from "./wrapper";
+import { ScratchblocksEngine } from "scratchblocks-ts";
 
 import type {
     LanguageCode,
+    RenderOptions,
     ScratchblocksPNGExportPath,
     ScratchblocksSettings,
     ScratchblocksStyle,
@@ -37,12 +37,19 @@ export class ScratchblocksSettingsManager {
         };
     }
 
-    getRenderOptions(inline = false): RenderOptions {
+    getRenderOptions(): RenderOptions {
         return {
             languages: this.getRenderLanguages(),
             style: this.settings.style,
-            scale: inline ? INLINE_SCALE : this.settings.scale,
-            inline,
+            scale: this.settings.scale,
+        };
+    }
+
+    getInlineRenderOptions(): RenderOptions {
+        return {
+            languages: this.getRenderLanguages(),
+            style: this.settings.style,
+            scale: INLINE_SCALE,
         };
     }
 
@@ -69,30 +76,37 @@ export class ScratchblocksSettingsManager {
 }
 
 export class ScratchblocksSettingsPreview {
-    constructor(
-        private readonly plugin: ScratchblocksPlugin,
-        private readonly wrapper: ScratchblocksWrapper
-    ) { }
+    private settingsEngine: ScratchblocksEngine | null = null;
 
-    getAvailableLanguageCodes(): LanguageCode[] {
-        return this.wrapper
+    constructor(private readonly plugin: ScratchblocksPlugin) { }
+
+    getAvailableLanguageCodes(targetDocument: Document): LanguageCode[] {
+        return this.getEngine(targetDocument)
             .getLanguageCodes()
             .filter((code) => code !== FALLBACK_LANGUAGE);
     }
 
-    getLanguageName(languageCode: LanguageCode): string {
-        return this.wrapper.getLanguageName(languageCode);
+    getLanguageName(targetDocument: Document, languageCode: LanguageCode): string {
+        return this.getEngine(targetDocument).getLanguageName(languageCode);
     }
 
-    createSVG(): SVGElement {
+    createSVG(targetDocument: Document): SVGElement {
+        const renderer = this.getEngine(targetDocument);
         const settings = this.plugin.getSettings();
-        const command = this.wrapper.getGreenFlagCommand(settings.languageCode);
+        const command = renderer.getGreenFlagCommand(settings.languageCode);
 
-        return this.wrapper.createSVGElement(command, {
+        return renderer.toSVG(command, {
             languages: [settings.languageCode],
             style: settings.style,
             scale: settings.scale,
         });
+    }
+
+    private getEngine(targetDocument: Document): ScratchblocksEngine {
+        return this.settingsEngine ??= ScratchblocksEngine.forDocument(
+            targetDocument,
+            { cacheSize: 0 }
+        );
     }
 }
 
@@ -116,7 +130,9 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         const settings = this.plugin.getSettings();
-        const availableLanguages = this.preview.getAvailableLanguageCodes();
+        const targetDocument = containerEl.ownerDocument;
+        const availableLanguages =
+            this.preview.getAvailableLanguageCodes(targetDocument);
 
         new Setting(containerEl).setName("Display").setHeading();
 
@@ -142,7 +158,10 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 dropdown.addOption("en", "English");
 
                 availableLanguages.sort().forEach((code) => {
-                    dropdown.addOption(code, this.preview.getLanguageName(code));
+                    dropdown.addOption(
+                        code,
+                        this.preview.getLanguageName(targetDocument, code)
+                    );
                 });
 
                 dropdown
@@ -234,6 +253,8 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
         if (!this.stylePreviewDiv) return;
 
         this.stylePreviewDiv.empty();
-        this.stylePreviewDiv.appendChild(this.preview.createSVG());
+        this.stylePreviewDiv.appendChild(
+            this.preview.createSVG(this.stylePreviewDiv.ownerDocument)
+        );
     }
 }

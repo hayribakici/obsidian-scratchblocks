@@ -1,9 +1,16 @@
-export type LanguageCode = string;
+import type {
+    LanguageCode,
+    RenderOptions,
+    ScratchblocksEngineOptions,
+    ScratchblocksStyle,
+} from "scratchblocks-ts";
 
-export type ScratchblocksStyle =
-    | "scratch2"
-    | "scratch3"
-    | "scratch3-high-contrast";
+export type {
+    LanguageCode,
+    RenderOptions,
+    ScratchblocksEngineOptions,
+    ScratchblocksStyle,
+};
 
 export type ScratchblocksPNGExportPath = "ask" | "current";
 

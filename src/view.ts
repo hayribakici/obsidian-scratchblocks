@@ -1,41 +1,39 @@
-import { LRUCache } from "./utils/lru-cache";
 import { formatError, getInlineScratchblocksSource } from "./utils/utils";
 
 import type { ScratchblocksToolbar } from "./toolbar";
-import type { ScratchblocksWrapper, RenderOptions } from "./wrapper";
-
-const MAX_INLINE_SVG_CACHE_ENTRIES = 100;
+import type { ScratchblocksEngine } from "scratchblocks-ts";
+import type { RenderOptions } from "./utils/types";
 
 interface ScratchblocksViewOptions {
-  getRenderOptions(inline?: boolean): RenderOptions;
+  engine: ScratchblocksEngine;
+  getRenderOptions(): RenderOptions;
+  getInlineRenderOptions(): RenderOptions;
   getShowToolbar(): boolean;
   exportAllPNGFromFile(sourcePath: string): Promise<void>;
 }
 
 export class ScratchblocksView {
-  private svgCache = new LRUCache<string, SVGElement>(
-    MAX_INLINE_SVG_CACHE_ENTRIES
-  );
-
   constructor(
-    private readonly wrapper: ScratchblocksWrapper,
     private readonly toolbar: ScratchblocksToolbar,
     private readonly options: ScratchblocksViewOptions
   ) {}
 
-  renderInlineCode(src: string): HTMLElement {
-    const container = createSpan({
-      cls: "scratchblocks-inline-rendered",
-    });
+  renderInlineCode(src: string, targetDocument: Document): HTMLElement {
+    const container = targetDocument.createElement("span");
+    container.className = "scratchblocks-inline-rendered";
 
     try {
-      const svg = this.getInlineSVG(src);
+      const svg = this.options.engine.toInlineSVG(
+        src,
+        this.options.getInlineRenderOptions()
+      );
+
       container.appendChild(svg);
     } catch (error) {
-      container.createSpan({
-        text: `Error: ${formatError(error)}`,
-        cls: "scratchblocks-error",
-      });
+      const errorEl = targetDocument.createElement("span");
+      errorEl.className = "scratchblocks-error";
+      errorEl.textContent = `Error: ${formatError(error)}`;
+      container.appendChild(errorEl);
     }
 
     return container;
@@ -53,7 +51,7 @@ export class ScratchblocksView {
         return;
       }
 
-      codeEl.replaceWith(this.renderInlineCode(src));
+      codeEl.replaceWith(this.renderInlineCode(src, codeEl.ownerDocument));
     });
   }
 
@@ -63,7 +61,7 @@ export class ScratchblocksView {
     sourcePath: string
   ) {
     try {
-      const svg = this.wrapper.createSVGElement(
+      const svg = this.options.engine.toSVG(
         src,
         this.options.getRenderOptions()
       );
@@ -73,7 +71,7 @@ export class ScratchblocksView {
         sourcePath,
         exportAllPNG: () => this.options.exportAllPNGFromFile(sourcePath),
         showToolbar: this.options.getShowToolbar(),
-      });
+      }, el.ownerDocument);
 
       el.replaceWith(rendered);
     } catch (error) {
@@ -82,34 +80,5 @@ export class ScratchblocksView {
         cls: "scratchblocks-error",
       });
     }
-  }
-
-  private getInlineSVG(src: string): SVGElement {
-    const options = this.options.getRenderOptions(true);
-    const cacheKey = this.getSVGCacheKey(src, options);
-    const cached = this.svgCache.get(cacheKey);
-
-    if (cached) {
-      return cached.cloneNode(true) as SVGElement;
-    }
-
-    const svg = this.wrapper.createSVGElement(src, options);
-
-    this.svgCache.set(cacheKey, svg.cloneNode(true) as SVGElement);
-
-    return svg;
-  }
-
-  private getSVGCacheKey(
-    src: string,
-    options: RenderOptions
-  ): string {
-    return JSON.stringify({
-      src,
-      languages: options.languages,
-      style: options.style,
-      scale: options.scale,
-      inline: options.inline,
-    });
   }
 }

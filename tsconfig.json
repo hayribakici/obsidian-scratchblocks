@@ -8,5 +8,5 @@
     "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "types.d.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }
