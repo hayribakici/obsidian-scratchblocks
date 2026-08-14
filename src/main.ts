@@ -5,7 +5,7 @@ import {
   ScratchblocksSettingsManager,
   ScratchblocksSettingsPreview,
 } from "./settings";
-import { ScratchblocksWrapper } from "./wrapper";
+import { ScratchblocksEngine } from "scratchblocks-ts";
 import { createBacktickedTextExtension } from "./editor-extension";
 import { ScratchblocksExporter } from "./exporter";
 import { ScratchblocksToolbar } from "./toolbar";
@@ -33,7 +33,7 @@ const FALLBACK_LANGUAGE = "en";
 const fencedLanguagesPrefixes = ['scratchblock', 'scratchblocks', 'sb'];
 
 export default class ScratchblocksPlugin extends Plugin {
-  private wrapper: ScratchblocksWrapper;
+  private engine: ScratchblocksEngine;
   private settingsManager: ScratchblocksSettingsManager;
   private settingsPreview: ScratchblocksSettingsPreview;
   private scratchblocksExporter: ScratchblocksExporter;
@@ -41,28 +41,25 @@ export default class ScratchblocksPlugin extends Plugin {
   private scratchblocksView: ScratchblocksView;
 
   async onload() {
-    this.wrapper = new ScratchblocksWrapper();
-    this.wrapper.load();
+    this.engine = ScratchblocksEngine.forDocument(document);
     this.settingsManager = new ScratchblocksSettingsManager(DEFAULT_SETTINGS);
-    this.settingsPreview = new ScratchblocksSettingsPreview(
-      this,
-      this.wrapper
-    );
+    this.settingsPreview = new ScratchblocksSettingsPreview(this);
 
     this.scratchblocksExporter = new ScratchblocksExporter(
       this.app.vault,
-      this.wrapper,
+      this.engine,
       this.settingsManager
     );
     this.scratchblocksToolbar = new ScratchblocksToolbar(
       this.scratchblocksExporter
     );
     this.scratchblocksView = new ScratchblocksView(
-      this.wrapper,
       this.scratchblocksToolbar,
       {
-        getRenderOptions: (inline?: boolean) =>
-          this.settingsManager.getRenderOptions(inline),
+        engine: this.engine,
+        getRenderOptions: () => this.settingsManager.getRenderOptions(),
+        getInlineRenderOptions: () =>
+          this.settingsManager.getInlineRenderOptions(),
         getShowToolbar: () => this.settingsManager.getShowToolbar(),
         exportAllPNGFromFile: (sourcePath: string) =>
           this.scratchblocksExporter.exportAllPNGFromFile(sourcePath),
@@ -91,7 +88,8 @@ export default class ScratchblocksPlugin extends Plugin {
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
-        (src) => this.scratchblocksView.renderInlineCode(src),
+        (src, targetDocument) =>
+          this.scratchblocksView.renderInlineCode(src, targetDocument),
         editorLivePreviewField
       )
     );
@@ -230,7 +228,7 @@ export default class ScratchblocksPlugin extends Plugin {
       ...getSavedSettings(loaded),
     };
 
-    if (!this.wrapper.hasLanguage(settings.languageCode)) {
+    if (!this.engine.hasLanguage(settings.languageCode)) {
       settings.languageCode = FALLBACK_LANGUAGE;
     }
 

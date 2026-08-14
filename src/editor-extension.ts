@@ -11,7 +11,7 @@ interface BacktickedText {
 
 export function createBacktickedTextExtension(
   getReplacementText: (text: string) => string | null,
-  renderReplacement: (text: string) => HTMLElement,
+  renderReplacement: (text: string, targetDocument: Document) => HTMLElement,
   livePreviewField: StateField<boolean>
 ) {
   return ViewPlugin.fromClass(
@@ -96,7 +96,7 @@ function buildBacktickedTextDecorations(
   view: EditorView,
   fencedLines: Set<number>,
   getReplacementText: (text: string) => string | null,
-  renderReplacement: (text: string) => HTMLElement
+  renderReplacement: (text: string, targetDocument: Document) => HTMLElement
 ): DecorationSet {
   const ranges: Range<Decoration>[] = [];
 
@@ -205,7 +205,10 @@ function isClosingFence(line: string, fenceMarker: string): boolean {
 class BacktickedTextWidget extends WidgetType {
   constructor(
     private readonly text: string,
-    private readonly renderReplacement: (text: string) => HTMLElement
+    private readonly renderReplacement: (
+      text: string,
+      targetDocument: Document
+    ) => HTMLElement
   ) {
     super();
   }
@@ -214,7 +217,7 @@ class BacktickedTextWidget extends WidgetType {
     return this.text === other.text;
   }
 
-  toDOM() {
-    return this.renderReplacement(this.text);
+  toDOM(view: EditorView) {
+    return this.renderReplacement(this.text, view.dom.ownerDocument);
   }
 }

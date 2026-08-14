@@ -3,7 +3,7 @@ import { Notice, TFile } from "obsidian";
 import { formatError, getAllScratchblocksSourcesFromText } from "./utils/utils";
 
 import type { Vault } from "obsidian";
-import type { ScratchblocksWrapper } from "./wrapper";
+import type { ScratchblocksEngine } from "scratchblocks-ts";
 import type { ScratchblocksSettingsManager } from "./settings";
 import type {
   ScratchblocksPNGExportPath,
@@ -25,14 +25,14 @@ export interface ExportOptions {
 export class ScratchblocksExporter {
   constructor(
     private readonly vault: Vault,
-    private readonly wrapper: ScratchblocksWrapper,
+    private readonly engine: ScratchblocksEngine,
     private readonly settings: ScratchblocksSettingsManager
   ) { }
 
   async copyPNG(src: string) {
     try {
       await copyPNGBlobToClipboard(
-        await this.wrapper.createPNGBlob(src, this.settings.getRenderOptions())
+        await this.engine.toPNGBlob(src, this.settings.getRenderOptions())
       );
     } catch (error) {
       new Notice(`Scratchblocks PNG copy failed: ${formatError(error)}`);
@@ -97,9 +97,9 @@ export class ScratchblocksExporter {
       exportPath: settings.exportPath,
       filenameTemplate: settings.filenameTemplate,
       firstLine: getFirstLine(src),
-      pngBlob: () => this.wrapper.createPNGBlob(src, this.settings.getRenderOptions()),
+      pngBlob: () => this.engine.toPNGBlob(src, this.settings.getRenderOptions()),
       svgBlob: () =>
-        new Blob([this.wrapper.createSVGString(src, this.settings.getRenderOptions())], {
+        new Blob([this.engine.toSVGString(src, this.settings.getRenderOptions())], {
           type: SVG_MIME_TYPE,
         }),
       sourcePath,

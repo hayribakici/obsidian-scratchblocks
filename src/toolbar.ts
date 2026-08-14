@@ -12,10 +12,13 @@ export interface RenderedBlockOptions {
 export class ScratchblocksToolbar {
   constructor(private readonly exporter: ScratchblocksExporter) { }
 
-  wrapWithToolBarIfEnabled(svg: SVGElement, options: RenderedBlockOptions): HTMLElement {
-    const container = createDiv({
-      cls: "scratchblocks-rendered",
-    });
+  wrapWithToolBarIfEnabled(
+    svg: SVGElement,
+    options: RenderedBlockOptions,
+    targetDocument: Document
+  ): HTMLElement {
+    const container = targetDocument.createElement("div");
+    container.className = "scratchblocks-rendered";
 
     if (options.showToolbar) {
       const toolbar = container.createDiv({
