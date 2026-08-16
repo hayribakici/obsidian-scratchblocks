@@ -80,9 +80,12 @@ export default class ScratchblocksPlugin extends Plugin {
         this.app,
         this,
         this.settingsManager,
-        () => this.saveSettings(),
-        () => {
-          this.refreshMarkdownViews();
+        async (refreshMarkdownViews) => {
+          await this.saveSettings();
+
+          if (refreshMarkdownViews) {
+            this.refreshMarkdownViews();
+          }
         }
       )
     );

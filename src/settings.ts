@@ -97,8 +97,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
         app: App,
         plugin: Plugin,
         settings: ScratchblocksSettingsManager,
-        private readonly saveSettings: () => Promise<void>,
-        private readonly refreshMarkdownViews: () => void
+        private readonly onSettingsChanged: (refreshMarkdownViews?: boolean) => Promise<void>
     ) {
         super(app, plugin);
         this.settings = settings;
@@ -121,9 +120,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 toggle
                     .setValue(settings.showToolbar)
                     .onChange(async (value) => {
-                        await this.patchSettings({ showToolbar: value });
-
-                        this.refreshMarkdownViews();
+                        await this.patchSettings({ showToolbar: value }, true);
                     })
             );
 
@@ -146,10 +143,9 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         await this.patchSettings({
                             languageCode: value,
-                        });
+                        }, true);
 
                         this.updateStylePreview();
-                        this.refreshMarkdownViews();
                     });
             });
 
@@ -165,10 +161,9 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         await this.patchSettings({
                             style: value as ScratchblocksStyle,
-                        });
+                        }, true);
 
                         this.updateStylePreview();
-                        this.refreshMarkdownViews();
                     })
             );
 
@@ -180,10 +175,9 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .setLimits(0.5, 2, 0.1)
                     .setValue(settings.scale)
                     .onChange(async (value) => {
-                        await this.patchSettings({ scale: value });
+                        await this.patchSettings({ scale: value }, true);
 
                         this.updateStylePreview();
-                        this.refreshMarkdownViews();
                     })
             );
 
@@ -226,9 +220,12 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             );
     }
 
-    private async patchSettings(settings: Partial<ScratchblocksSettings>) {
+    private async patchSettings(
+        settings: Partial<ScratchblocksSettings>,
+        refreshMarkdownViews?: boolean
+    ) {
         this.settings.patch(settings);
-        await this.saveSettings();
+        await this.onSettingsChanged(refreshMarkdownViews);
     }
 
     updateStylePreview(): void {
