@@ -6,6 +6,8 @@ import { ScratchblocksEngine } from "scratchblocks-ts";
 import type {
     LanguageCode,
     RenderOptions,
+    RenderSettings,
+    ExportSettings,
     ScratchblocksPNGExportPath,
     ScratchblocksSettings,
     ScratchblocksStyle,
@@ -14,6 +16,10 @@ import { AUTO_LANGUAGE_CODE } from "./utils/types";
 
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
+
+interface SettingsChangedOptions {
+    refreshMarkdownViews?: boolean;
+}
 
 export interface ScratchblocksExportSettings {
     filenameTemplate: string;
@@ -24,7 +30,8 @@ export class ScratchblocksSettingsManager {
 
     constructor(
         private settings: ScratchblocksSettings,
-        private autoLanguage: LanguageCode
+        private autoLanguage: LanguageCode,
+        private readonly onSettingsChanged: (options?: SettingsChangedOptions) => Promise<void>
     ) { }
 
     get(): ScratchblocksSettings {
@@ -40,6 +47,16 @@ export class ScratchblocksSettingsManager {
             ...this.settings,
             ...settings,
         };
+    }
+
+    async patchRenderSettings(settings: Partial<RenderSettings>) {
+        this.patch(settings);
+        await this.onSettingsChanged({ refreshMarkdownViews: true });
+    }
+
+    async patchExportSettings(settings: Partial<ExportSettings>) {
+        this.patch(settings);
+        await this.onSettingsChanged();
     }
 
     getRenderOptions(): RenderOptions {
@@ -96,9 +113,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
     constructor(
         app: App,
         plugin: Plugin,
-        settings: ScratchblocksSettingsManager,
-        private readonly onSettingsChanged: (refreshMarkdownViews?: boolean) => Promise<void>
-    ) {
+        settings: ScratchblocksSettingsManager) {
         super(app, plugin);
         this.settings = settings;
     }
@@ -120,7 +135,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 toggle
                     .setValue(settings.showToolbar)
                     .onChange(async (value) => {
-                        await this.patchSettings({ showToolbar: value }, true);
+                        await this.settings.patchRenderSettings({ showToolbar: value });
                     })
             );
 
@@ -141,9 +156,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                 dropdown
                     .setValue(settings.languageCode)
                     .onChange(async (value) => {
-                        await this.patchSettings({
-                            languageCode: value,
-                        }, true);
+                        await this.settings.patchRenderSettings({ languageCode: value });
 
                         this.updateStylePreview();
                     });
@@ -159,10 +172,9 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .addOption("scratch3-high-contrast", "Scratch 3 high contrast")
                     .setValue(settings.style)
                     .onChange(async (value) => {
-                        await this.patchSettings({
+                        await this.settings.patchRenderSettings({
                             style: value as ScratchblocksStyle,
-                        }, true);
-
+                        });
                         this.updateStylePreview();
                     })
             );
@@ -175,7 +187,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .setLimits(0.5, 2, 0.1)
                     .setValue(settings.scale)
                     .onChange(async (value) => {
-                        await this.patchSettings({ scale: value }, true);
+                        await this.settings.patchRenderSettings({ scale: value });
 
                         this.updateStylePreview();
                     })
@@ -198,7 +210,7 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .setPlaceholder("scratchblocks_{firstLine}")
                     .setValue(settings.pngFilenameTemplate)
                     .onChange(async (value) => {
-                        await this.patchSettings({
+                        await this.settings.patchExportSettings({
                             pngFilenameTemplate: value,
                         });
                     })
@@ -213,19 +225,11 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
                     .addOption("current", L.currentNoteFolder())
                     .setValue(settings.pngExportPath)
                     .onChange(async (value) => {
-                        await this.patchSettings({
+                        await this.settings.patchExportSettings({
                             pngExportPath: value as ScratchblocksPNGExportPath,
                         });
                     })
             );
-    }
-
-    private async patchSettings(
-        settings: Partial<ScratchblocksSettings>,
-        refreshMarkdownViews?: boolean
-    ) {
-        this.settings.patch(settings);
-        await this.onSettingsChanged(refreshMarkdownViews);
     }
 
     updateStylePreview(): void {

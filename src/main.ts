@@ -46,7 +46,8 @@ export default class ScratchblocksPlugin extends Plugin {
     this.engine = ScratchblocksEngine.forDocument(document);
     this.settingsManager = new ScratchblocksSettingsManager(
       DEFAULT_SETTINGS,
-      this.getAutoLanguageCode()
+      this.getAutoLanguageCode(),
+      (options) => this.onSettingsChanged(options)
     );
 
     this.scratchblocksExporter = new ScratchblocksExporter(
@@ -79,14 +80,7 @@ export default class ScratchblocksPlugin extends Plugin {
       new ScratchblocksSettingTab(
         this.app,
         this,
-        this.settingsManager,
-        async (refreshMarkdownViews) => {
-          await this.saveSettings();
-
-          if (refreshMarkdownViews) {
-            this.refreshMarkdownViews();
-          }
-        }
+        this.settingsManager
       )
     );
   }
@@ -249,6 +243,14 @@ export default class ScratchblocksPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settingsManager.get());
+  }
+
+  async onSettingsChanged(options?: { refreshMarkdownViews?: boolean }) {
+    await this.saveSettings();
+
+    if (options?.refreshMarkdownViews) {
+      this.refreshMarkdownViews();
+    }
   }
 
   refreshMarkdownViews() {
