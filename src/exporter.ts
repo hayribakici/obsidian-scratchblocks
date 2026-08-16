@@ -1,13 +1,12 @@
 import { Notice, TFile } from "obsidian";
 
 import { formatError, getAllScratchblocksSourcesFromText } from "./utils/utils";
+import { L } from "./i18n";
 
 import type { Vault } from "obsidian";
 import type { ScratchblocksEngine } from "scratchblocks-ts";
 import type { ScratchblocksSettingsManager } from "./settings";
-import type {
-  ScratchblocksPNGExportPath,
-} from "./utils/types";
+import type {  ScratchblocksPNGExportPath } from "./utils/types";
 
 export const PNG_MIME_TYPE = "image/png";
 export const SVG_MIME_TYPE = "image/svg+xml;charset=utf-8";
@@ -35,7 +34,7 @@ export class ScratchblocksExporter {
         await this.engine.toPNGBlob(src, this.settings.getRenderOptions())
       );
     } catch (error) {
-      new Notice(`Scratchblocks PNG copy failed: ${formatError(error)}`);
+      new Notice(`${L.scratchblocksPNGCopyFailed()}: ${formatError(error)}`);
     }
   }
 
@@ -44,7 +43,7 @@ export class ScratchblocksExporter {
       const options = this.getExportOptions(src, sourcePath);
       await exportBlob(options.svgBlob(), options, "svg");
     } catch (error) {
-      new Notice(`Scratchblocks SVG export failed: ${formatError(error)}`);
+      new Notice(`${L.scratchblocksSVGExportFailed()}: ${formatError(error)}`);
     }
   }
 
@@ -52,7 +51,7 @@ export class ScratchblocksExporter {
     try {
       await this.exportScratchblocksPNG(this.getExportOptions(src, sourcePath));
     } catch (error) {
-      new Notice(`Scratchblocks PNG export failed: ${formatError(error)}`);
+      new Notice(`${L.scratchblocksPNGExportFailed()}: ${formatError(error)}`);
     }
   }
 
@@ -65,7 +64,7 @@ export class ScratchblocksExporter {
         await this.exportScratchblocksPNG(option);
       }
     } catch (error) {
-      new Notice(`Scratchblocks PNG export failed: ${formatError(error)}`);
+      new Notice(`${L.scratchblocksPNGExportFailed()}: ${formatError(error)}`);
     }
   }
 

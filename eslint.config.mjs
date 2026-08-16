@@ -23,7 +23,7 @@ export default defineConfig([
   ...obsidianmd.configs.recommended,
   {
     rules: {
-      "depend/ban-dependencies": "warn",
+      "depend/ban-dependencies": ["warn", { allowed: ["builtin-modules"] }],
     },
   },
   {
@@ -38,6 +38,9 @@ export default defineConfig([
     "dist",
     "esbuild.config.mjs",
     "eslint.config.mjs",
+    "src/i18n/generated/formatters.ts",
+    "src/i18n/generated/i18n-types.ts",
+    "src/i18n/generated/i18n-util*.ts",
     "version-bump.mjs",
     "versions.json",
     "main.js",

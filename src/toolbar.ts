@@ -1,5 +1,7 @@
 import { Menu, setIcon } from "obsidian";
 
+import { L } from "./i18n";
+
 import type { ScratchblocksExporter } from "./exporter";
 
 export interface RenderedBlockOptions {
@@ -43,7 +45,7 @@ export class ScratchblocksToolbar {
     const button = toolbar.createEl("button", {
       cls: "scratchblocks-copy-button",
       attr: {
-        "aria-label": "Copy png image",
+        "aria-label": L.copyPNGImage(),
       },
     });
 
@@ -62,7 +64,7 @@ export class ScratchblocksToolbar {
     const button = toolbar.createEl("button", {
       cls: "scratchblocks-copy-button",
       attr: {
-        "aria-label": "Download png",
+        "aria-label": L.downloadPNG(),
       },
     });
 
@@ -79,7 +81,7 @@ export class ScratchblocksToolbar {
     const button = toolbar.createEl("button", {
       cls: "scratchblocks-copy-button",
       attr: {
-        "aria-label": "Download svg",
+        "aria-label": L.downloadSVG(),
       },
     });
 
@@ -113,7 +115,7 @@ export class ScratchblocksToolbar {
 
     menu.addItem((item) =>
       item
-        .setTitle("Copy Scratchblocks png")
+        .setTitle(L.copyScratchblocksPNG())
         .setIcon("image")
         .onClick(() => {
           void this.exporter.copyPNG(options.source);
@@ -124,7 +126,7 @@ export class ScratchblocksToolbar {
 
     menu.addItem((item) =>
       item
-        .setTitle("Export Scratchblocks to svg")
+        .setTitle(L.exportScratchblocksSVG())
         .setIcon("file-code")
         .onClick(() => {
           void this.exporter.exportSVG(options.source, options.sourcePath);
@@ -133,7 +135,7 @@ export class ScratchblocksToolbar {
 
     menu.addItem((item) =>
       item
-        .setTitle("Export Scratchblocks to png")
+        .setTitle(L.exportScratchblocksPNG())
         .setIcon("image-down")
         .onClick(() => {
           void this.exporter.exportPNG(options.source, options.sourcePath);
@@ -143,7 +145,7 @@ export class ScratchblocksToolbar {
     if (options.exportAllPNG) {
       menu.addItem((item) =>
         item
-          .setTitle("Export all Scratchblocks to png")
+          .setTitle(L.exportAllScratchblocksPNG())
           .setIcon("download")
           .onClick(() => {
             void options.exportAllPNG?.();
