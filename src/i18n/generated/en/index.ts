@@ -1,0 +1,37 @@
+import type { BaseTranslation } from "../i18n-types";
+
+const en: BaseTranslation = {
+  askDefaultDownload: "Ask / default download",
+  automaticObsidian: "Automatic (Obsidian)",
+  copyPNG: "Copy PNG",
+  copyPNGImage: "Copy PNG image",
+  copyScratchblocksPNG: "Copy scratchblocks PNG",
+  currentNoteFolder: "Current note folder",
+  display: "Display",
+  downloadPNG: "Download PNG",
+  downloadSVG: "Download SVG",
+  exportAllScratchblocksPNG: "Export all scratchblocks to PNG",
+  exporting: "Exporting",
+  exportScratchblocksPNG: "Export scratchblocks to PNG",
+  exportScratchblocksSVG: "Export scratchblocks to SVG",
+  exportSVG: "Export SVG",
+  language: "Language",
+  pngExportLocation: "PNG export location",
+  pngExportLocationDesc: "Choose where PNG exports are saved",
+  pngFilenameTemplate: "PNG filename template",
+  pngFilenameTemplateDesc: "Use firstLine and/or datetime placeholders",
+  preview: "Preview",
+  rendering: "Rendering",
+  scale: "Scale",
+  scaleDesc: "Scale rendered scratch blocks",
+  scratchblocksPNGCopyFailed: "Scratchblocks PNG copy failed",
+  scratchblocksPNGExportFailed: "Scratchblocks PNG export failed",
+  scratchblocksSVGExportFailed: "Scratchblocks SVG export failed",
+  selectLanguageDesc: "Select the default language for scratch blocks",
+  showToolbar: "Show toolbar",
+  showToolbarDesc: "Show export and copy buttons above rendered scratch blocks",
+  style: "Style",
+  styleDesc: "Choose the default visual style for scratch blocks",
+};
+
+export default en;

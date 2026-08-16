@@ -16,11 +16,11 @@ Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plu
 
 Both `scratchblock` and `scratchblocks` code fences are supported.
 
-### Inline `scratchblocks`
+## Inline `scratchblocks`
 
 Use `sb <scratchcode>` in order to display inline scratchblocks code with a `sb` prefix.
 
-So writing 
+So writing
 
 ~~~suggestion
 OMG, I guess a `sb when green flag clicked` snuck itself into the text.
@@ -29,7 +29,6 @@ OMG, I guess a `sb when green flag clicked` snuck itself into the text.
 will be rendered as:
 
 > OMG, I guess a <img width="54" height="30" alt="a green flag block is displayed inline" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" /> snuck itself into the text.
-
 
 ## Caveats and workarounds
 
@@ -47,6 +46,7 @@ For example, this CSS:
   width: auto;            /* necessary as well */
 }
 ```
+
 renders the above as[^1]:
 
 <img width="auto" height="60" alt="image" src="https://github.com/user-attachments/assets/d9d6c97b-bec7-4dde-b56d-4a3103cf1b82" />
@@ -57,7 +57,7 @@ renders the above as[^1]:
 
 ## Under the hood
 
-This plugin uses the [`scratchblocks-ts`](https://github.com/hayribakici/scratchblocks-ts) package for the rendering and Markdown parsing logic.
+This plugin uses the [`scratchblocks-ts`](https://github.com/hayribakici/scratchblocks-ts) package for rendering Scratchblocks.
 
 ## Contributing
 
@@ -87,7 +87,7 @@ npm run build
 
 ### Credits
 
-This is a fork from [shabegom/obsidian-scratchblocks](https://github.com/shabegom/obsidian-scratchblocks/), which renders scratchblocks codeblocks into the [Obsidian](https://obsidian.md) editor. Since that repository hasn't been maintained, this repository tries to fill its shoes.
+This plugin started as a fork of shabegom's Scratchblocks plugin for Obsidian. Since that project hasn't been maintained, this repository tries to fill its shoes.
 
 ---
 

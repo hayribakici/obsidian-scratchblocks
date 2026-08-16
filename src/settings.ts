@@ -1,6 +1,6 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 
-import type ScratchblocksPlugin from "./main";
+import { L } from "./i18n";
 import { ScratchblocksEngine } from "scratchblocks-ts";
 
 import type {
@@ -10,6 +10,7 @@ import type {
     ScratchblocksSettings,
     ScratchblocksStyle,
 } from "./utils/types";
+import { AUTO_LANGUAGE_CODE } from "./utils/types";
 
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
@@ -20,7 +21,11 @@ export interface ScratchblocksExportSettings {
 }
 
 export class ScratchblocksSettingsManager {
-    constructor(private settings: ScratchblocksSettings) { }
+
+    constructor(
+        private settings: ScratchblocksSettings,
+        private autoLanguage: LanguageCode
+    ) { }
 
     get(): ScratchblocksSettings {
         return this.settings;
@@ -39,7 +44,7 @@ export class ScratchblocksSettingsManager {
 
     getRenderOptions(): RenderOptions {
         return {
-            languages: this.getRenderLanguages(),
+            languages: this.getRenderLanguagesWithFallback(),
             style: this.settings.style,
             scale: this.settings.scale,
         };
@@ -47,7 +52,7 @@ export class ScratchblocksSettingsManager {
 
     getInlineRenderOptions(): RenderOptions {
         return {
-            languages: this.getRenderLanguages(),
+            languages: this.getRenderLanguagesWithFallback(),
             style: this.settings.style,
             scale: INLINE_SCALE,
         };
@@ -64,8 +69,16 @@ export class ScratchblocksSettingsManager {
         return this.settings.showToolbar;
     }
 
-    private getRenderLanguages(): LanguageCode[] {
-        const languageCode = this.settings.languageCode;
+    getRenderLanguageCode(): LanguageCode {
+        if (this.settings.languageCode === AUTO_LANGUAGE_CODE) {
+            return this.autoLanguage;
+        }
+
+        return this.settings.languageCode;
+    }
+
+    private getRenderLanguagesWithFallback(): LanguageCode[] {
+        const languageCode = this.getRenderLanguageCode();
 
         if (languageCode === FALLBACK_LANGUAGE) {
             return [FALLBACK_LANGUAGE];
@@ -75,186 +88,166 @@ export class ScratchblocksSettingsManager {
     }
 }
 
-export class ScratchblocksSettingsPreview {
-    private settingsEngine: ScratchblocksEngine | null = null;
-
-    constructor(private readonly plugin: ScratchblocksPlugin) { }
-
-    getAvailableLanguageCodes(targetDocument: Document): LanguageCode[] {
-        return this.getEngine(targetDocument)
-            .getLanguageCodes()
-            .filter((code) => code !== FALLBACK_LANGUAGE);
-    }
-
-    getLanguageName(targetDocument: Document, languageCode: LanguageCode): string {
-        return this.getEngine(targetDocument).getLanguageName(languageCode);
-    }
-
-    createSVG(targetDocument: Document): SVGElement {
-        const renderer = this.getEngine(targetDocument);
-        const settings = this.plugin.getSettings();
-        const command = renderer.getGreenFlagCommand(settings.languageCode);
-
-        return renderer.toSVG(command, {
-            languages: [settings.languageCode],
-            style: settings.style,
-            scale: settings.scale,
-        });
-    }
-
-    private getEngine(targetDocument: Document): ScratchblocksEngine {
-        return this.settingsEngine ??= ScratchblocksEngine.forDocument(
-            targetDocument,
-            { cacheSize: 0 }
-        );
-    }
-}
-
 export class ScratchblocksSettingTab extends PluginSettingTab {
-    plugin: ScratchblocksPlugin;
-    preview: ScratchblocksSettingsPreview;
+    settings: ScratchblocksSettingsManager;
     stylePreviewDiv: HTMLDivElement | null = null;
+    private settingsEngine: ScratchblocksEngine | null = null;
 
     constructor(
         app: App,
-        plugin: ScratchblocksPlugin,
-        preview: ScratchblocksSettingsPreview
+        plugin: Plugin,
+        settings: ScratchblocksSettingsManager,
+        private readonly saveSettings: () => Promise<void>,
+        private readonly refreshMarkdownViews: () => void
     ) {
         super(app, plugin);
-        this.plugin = plugin;
-        this.preview = preview;
+        this.settings = settings;
     }
 
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
 
-        const settings = this.plugin.getSettings();
+        const settings = this.settings.get();
         const targetDocument = containerEl.ownerDocument;
-        const availableLanguages =
-            this.preview.getAvailableLanguageCodes(targetDocument);
+        const engine = this.getEngine(targetDocument);
 
-        new Setting(containerEl).setName("Display").setHeading();
+        new Setting(containerEl).setName(L.display()).setHeading();
 
         new Setting(containerEl)
-            .setName("Show toolbar")
-            .setDesc("Show export and copy buttons above rendered Scratch blocks")
+            .setName(L.showToolbar())
+            .setDesc(L.showToolbarDesc())
             .addToggle((toggle) =>
                 toggle
                     .setValue(settings.showToolbar)
                     .onChange(async (value) => {
-                        await this.plugin.patchSettings({ showToolbar: value });
+                        await this.patchSettings({ showToolbar: value });
 
-                        this.plugin.refreshMarkdownViews();
+                        this.refreshMarkdownViews();
                     })
             );
 
-        new Setting(containerEl).setName("Rendering").setHeading();
+        new Setting(containerEl).setName(L.rendering()).setHeading();
 
         new Setting(containerEl)
-            .setName("Language")
-            .setDesc("Select the default language for Scratch blocks")
+            .setName(L.language())
+            .setDesc(L.selectLanguageDesc())
             .addDropdown((dropdown) => {
-                dropdown.addOption("en", "English");
+                dropdown.addOption(AUTO_LANGUAGE_CODE, L.automaticObsidian());
 
-                availableLanguages.sort().forEach((code) => {
-                    dropdown.addOption(
-                        code,
-                        this.preview.getLanguageName(targetDocument, code)
-                    );
-                });
+                engine.getLanguageCodes()
+                    .sort()
+                    .forEach((code) => {
+                        dropdown.addOption(code, engine.getLanguageName(code));
+                    });
 
                 dropdown
                     .setValue(settings.languageCode)
                     .onChange(async (value) => {
-                        await this.plugin.patchSettings({
+                        await this.patchSettings({
                             languageCode: value,
                         });
 
                         this.updateStylePreview();
-                        this.plugin.refreshMarkdownViews();
+                        this.refreshMarkdownViews();
                     });
             });
 
         new Setting(containerEl)
-            .setName("Style")
-            .setDesc("Choose the default visual style for Scratch blocks")
+            .setName(L.style())
+            .setDesc(L.styleDesc())
             .addDropdown((dropdown) =>
                 dropdown
                     .addOption("scratch2", "Scratch 2")
                     .addOption("scratch3", "Scratch 3")
-                    .addOption("scratch3-high-contrast", "Scratch 3 High Contrast")
+                    .addOption("scratch3-high-contrast", "Scratch 3 high contrast")
                     .setValue(settings.style)
                     .onChange(async (value) => {
-                        await this.plugin.patchSettings({
+                        await this.patchSettings({
                             style: value as ScratchblocksStyle,
                         });
 
                         this.updateStylePreview();
-                        this.plugin.refreshMarkdownViews();
+                        this.refreshMarkdownViews();
                     })
             );
 
         new Setting(containerEl)
-            .setName("Scale")
-            .setDesc("Scale rendered Scratch blocks")
+            .setName(L.scale())
+            .setDesc(L.scaleDesc())
             .addSlider((slider) =>
                 slider
                     .setLimits(0.5, 2, 0.1)
                     .setValue(settings.scale)
                     .onChange(async (value) => {
-                        await this.plugin.patchSettings({ scale: value });
+                        await this.patchSettings({ scale: value });
 
                         this.updateStylePreview();
-                        this.plugin.refreshMarkdownViews();
+                        this.refreshMarkdownViews();
                     })
             );
 
         this.stylePreviewDiv = new Setting(containerEl)
-            .setName("Preview")
+            .setName(L.preview())
             .settingEl.createDiv({
                 cls: "scratchblocks-style-preview",
             });
         this.updateStylePreview();
 
-        new Setting(containerEl).setName("Exporting").setHeading();
+        new Setting(containerEl).setName(L.exporting()).setHeading();
 
         new Setting(containerEl)
-            .setName("PNG filename template")
-            .setDesc("Use {firstLine} and/or {datetime}")
+            .setName(L.pngFilenameTemplate())
+            .setDesc(L.pngFilenameTemplateDesc())
             .addText((text) =>
                 text
                     .setPlaceholder("scratchblocks_{firstLine}")
                     .setValue(settings.pngFilenameTemplate)
                     .onChange(async (value) => {
-                        await this.plugin.patchSettings({
+                        await this.patchSettings({
                             pngFilenameTemplate: value,
                         });
                     })
             );
 
         new Setting(containerEl)
-            .setName("PNG export location")
-            .setDesc("Choose where PNG exports are saved")
+            .setName(L.pngExportLocation())
+            .setDesc(L.pngExportLocationDesc())
             .addDropdown((dropdown) =>
                 dropdown
-                    .addOption("ask", "Ask / default download")
-                    .addOption("current", "Current note folder")
+                    .addOption("ask", L.askDefaultDownload())
+                    .addOption("current", L.currentNoteFolder())
                     .setValue(settings.pngExportPath)
                     .onChange(async (value) => {
-                        await this.plugin.patchSettings({
+                        await this.patchSettings({
                             pngExportPath: value as ScratchblocksPNGExportPath,
                         });
                     })
             );
     }
 
+    private async patchSettings(settings: Partial<ScratchblocksSettings>) {
+        this.settings.patch(settings);
+        await this.saveSettings();
+    }
+
     updateStylePreview(): void {
         if (!this.stylePreviewDiv) return;
 
+        const engine = this.getEngine(this.stylePreviewDiv.ownerDocument);
+        const languageCode = this.settings.getRenderLanguageCode();
+        const command = engine.getGreenFlagCommand(languageCode);
+
         this.stylePreviewDiv.empty();
         this.stylePreviewDiv.appendChild(
-            this.preview.createSVG(this.stylePreviewDiv.ownerDocument)
+            engine.toSVG(command, this.settings.getRenderOptions())
+        );
+    }
+
+    private getEngine(targetDocument: Document): ScratchblocksEngine {
+        return this.settingsEngine ??= ScratchblocksEngine.forDocument(
+            targetDocument,
+            { cacheSize: 0 }
         );
     }
 }

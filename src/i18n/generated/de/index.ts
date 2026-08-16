@@ -1,0 +1,37 @@
+import type { Translation } from "../i18n-types";
+
+const de: Translation = {
+  askDefaultDownload: "Fragen / Standard-Download",
+  automaticObsidian: "Automatisch (Obsidian)",
+  copyPNG: "PNG kopieren",
+  copyPNGImage: "PNG-Bild kopieren",
+  copyScratchblocksPNG: "Scratchblocks-PNG kopieren",
+  currentNoteFolder: "Ordner der aktuellen Notiz",
+  display: "Anzeige",
+  downloadPNG: "PNG herunterladen",
+  downloadSVG: "SVG herunterladen",
+  exportAllScratchblocksPNG: "Alle Scratchblocks als PNG exportieren",
+  exporting: "Exportieren",
+  exportScratchblocksPNG: "Scratchblocks als PNG exportieren",
+  exportScratchblocksSVG: "Scratchblocks als SVG exportieren",
+  exportSVG: "SVG exportieren",
+  language: "Sprache",
+  pngExportLocation: "PNG-Exportort",
+  pngExportLocationDesc: "Auswahlen, wo PNG-Exporte gespeichert werden",
+  pngFilenameTemplate: "PNG-Dateinamenvorlage",
+  pngFilenameTemplateDesc: "firstLine- und/oder datetime-Platzhalter verwenden",
+  preview: "Vorschau",
+  rendering: "Darstellung",
+  scale: "Skalierung",
+  scaleDesc: "Skalierung gerenderter Scratch-Blocke",
+  scratchblocksPNGCopyFailed: "Scratchblocks-PNG konnte nicht kopiert werden",
+  scratchblocksPNGExportFailed: "Scratchblocks-PNG konnte nicht exportiert werden",
+  scratchblocksSVGExportFailed: "Scratchblocks-SVG konnte nicht exportiert werden",
+  selectLanguageDesc: "Standardsprache fur Scratch-Blocke auswahlen",
+  showToolbar: "Werkzeugleiste anzeigen",
+  showToolbarDesc: "Export- und Kopierbuttons uber gerenderten Scratch-Blocken anzeigen",
+  style: "Stil",
+  styleDesc: "Standardstil fur Scratch-Blocke auswahlen",
+};
+
+export default de;

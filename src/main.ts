@@ -1,13 +1,13 @@
-import { MarkdownView, Plugin, editorLivePreviewField } from "obsidian";
+import { MarkdownView, Plugin, editorLivePreviewField, getLanguage } from "obsidian";
 
 import {
   ScratchblocksSettingTab,
   ScratchblocksSettingsManager,
-  ScratchblocksSettingsPreview,
 } from "./settings";
 import { ScratchblocksEngine } from "scratchblocks-ts";
 import { createBacktickedTextExtension } from "./editor-extension";
 import { ScratchblocksExporter } from "./exporter";
+import { L } from "./i18n";
 import { ScratchblocksToolbar } from "./toolbar";
 import { ScratchblocksView } from "./view";
 import {
@@ -17,11 +17,14 @@ import {
   getScratchblocksSource,
 } from "./utils/utils";
 
+import { AUTO_LANGUAGE_CODE } from "./utils/types";
+
 import type { ScratchblocksSettings } from "./utils/types";
+import type { LanguageCode } from "scratchblocks-ts";
 import type { Menu } from "obsidian";
 
 const DEFAULT_SETTINGS: ScratchblocksSettings = {
-  languageCode: "en",
+  languageCode: AUTO_LANGUAGE_CODE,
   style: "scratch3",
   scale: 1,
   showToolbar: true,
@@ -35,15 +38,16 @@ const fencedLanguagesPrefixes = ['scratchblock', 'scratchblocks', 'sb'];
 export default class ScratchblocksPlugin extends Plugin {
   private engine: ScratchblocksEngine;
   private settingsManager: ScratchblocksSettingsManager;
-  private settingsPreview: ScratchblocksSettingsPreview;
   private scratchblocksExporter: ScratchblocksExporter;
   private scratchblocksToolbar: ScratchblocksToolbar;
   private scratchblocksView: ScratchblocksView;
 
   async onload() {
     this.engine = ScratchblocksEngine.forDocument(document);
-    this.settingsManager = new ScratchblocksSettingsManager(DEFAULT_SETTINGS);
-    this.settingsPreview = new ScratchblocksSettingsPreview(this);
+    this.settingsManager = new ScratchblocksSettingsManager(
+      DEFAULT_SETTINGS,
+      this.getAutoLanguageCode()
+    );
 
     this.scratchblocksExporter = new ScratchblocksExporter(
       this.app.vault,
@@ -72,7 +76,15 @@ export default class ScratchblocksPlugin extends Plugin {
     this.registerCommands();
     this.registerEditorMenu();
     this.addSettingTab(
-      new ScratchblocksSettingTab(this.app, this, this.settingsPreview)
+      new ScratchblocksSettingTab(
+        this.app,
+        this,
+        this.settingsManager,
+        () => this.saveSettings(),
+        () => {
+          this.refreshMarkdownViews();
+        }
+      )
     );
   }
 
@@ -98,7 +110,7 @@ export default class ScratchblocksPlugin extends Plugin {
   private registerCommands() {
     this.addCommand({
       id: "copy-png",
-      name: "Copy PNG",
+      name: L.copyPNG(),
       editorCheckCallback: (checking, editor) => {
         const src = getScratchblocksSource(editor);
 
@@ -116,7 +128,7 @@ export default class ScratchblocksPlugin extends Plugin {
 
     this.addCommand({
       id: "export-all-png",
-      name: "Export all to PNG",
+      name: L.exportAllScratchblocksPNG(),
       editorCheckCallback: (checking, editor, info) => {
         const sources = getAllScratchblocksSources(editor);
 
@@ -134,7 +146,7 @@ export default class ScratchblocksPlugin extends Plugin {
 
     this.addCommand({
       id: "export-svg",
-      name: "Export SVG",
+      name: L.exportSVG(),
       editorCheckCallback: (checking, editor, info) => {
         const src = getScratchblocksSource(editor);
 
@@ -182,40 +194,32 @@ export default class ScratchblocksPlugin extends Plugin {
     if (src) {
       menu.addItem((item) =>
         item
-          .setTitle("Copy Scratchblocks png")
+          .setTitle(L.copyScratchblocksPNG())
           .setIcon("image")
-          .onClick(() => {
-            void this.scratchblocksExporter.copyPNG(src);
-          })
+          .onClick(() => this.scratchblocksExporter.copyPNG(src))
       );
 
       menu.addItem((item) =>
         item
-          .setTitle("Export Scratchblocks to svg")
+          .setTitle(L.exportScratchblocksSVG())
           .setIcon("file-code")
-          .onClick(() => {
-            void this.scratchblocksExporter.exportSVG(src, sourcePath);
-          })
+          .onClick(() => this.scratchblocksExporter.exportSVG(src, sourcePath))
       );
 
       menu.addItem((item) =>
         item
-          .setTitle("Export Scratchblocks to png")
+          .setTitle(L.exportScratchblocksPNG())
           .setIcon("download")
-          .onClick(() => {
-            void this.scratchblocksExporter.exportPNG(src, sourcePath);
-          })
+          .onClick(() => this.scratchblocksExporter.exportPNG(src, sourcePath))
       );
     }
 
     if (sources.length) {
       menu.addItem((item) =>
         item
-          .setTitle("Export all Scratchblocks to png")
+          .setTitle(L.exportAllScratchblocksPNG())
           .setIcon("download")
-          .onClick(() => {
-            void this.scratchblocksExporter.exportAllPNG(sources, sourcePath);
-          })
+          .onClick(() => this.scratchblocksExporter.exportAllPNG(sources, sourcePath))
       );
     }
   }
@@ -228,15 +232,12 @@ export default class ScratchblocksPlugin extends Plugin {
       ...getSavedSettings(loaded),
     };
 
-    if (!this.engine.hasLanguage(settings.languageCode)) {
+    if (settings.languageCode !== AUTO_LANGUAGE_CODE &&
+      !this.engine.hasLanguage(settings.languageCode)) {
       settings.languageCode = FALLBACK_LANGUAGE;
     }
 
-    if (
-      !["scratch2", "scratch3", "scratch3-high-contrast"].includes(
-        settings.style
-      )
-    ) {
+    if (!["scratch2", "scratch3", "scratch3-high-contrast"].includes(settings.style)) {
       settings.style = "scratch3";
     }
 
@@ -245,20 +246,6 @@ export default class ScratchblocksPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settingsManager.get());
-  }
-
-  getSettings(): ScratchblocksSettings {
-    return this.settingsManager.get();
-  }
-
-  async updateSettings(settings: ScratchblocksSettings) {
-    this.settingsManager.update(settings);
-    await this.saveSettings();
-  }
-
-  async patchSettings(settings: Partial<ScratchblocksSettings>) {
-    this.settingsManager.patch(settings);
-    await this.saveSettings();
   }
 
   refreshMarkdownViews() {
@@ -271,6 +258,19 @@ export default class ScratchblocksPlugin extends Plugin {
         rebuildableLeaf.rebuildView?.();
       }
     });
+  }
+
+  /** Resolves the `auto` language into obsidians current set language. */
+  private getAutoLanguageCode(): LanguageCode {
+    const language = getLanguage();
+    const candidates = [
+      language,
+      language.toLowerCase(),
+      language.split("-")[0],
+      language.split("_")[0],
+    ];
+
+    return candidates.find((candidate) => this.engine.hasLanguage(candidate)) ?? FALLBACK_LANGUAGE;
   }
 }
 

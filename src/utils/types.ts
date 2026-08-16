@@ -12,10 +12,12 @@ export type {
     ScratchblocksStyle,
 };
 
+export const AUTO_LANGUAGE_CODE = "auto";
+
 export type ScratchblocksPNGExportPath = "ask" | "current";
 
 export interface ScratchblocksSettings {
-    languageCode: LanguageCode;
+    languageCode: string;
     style: ScratchblocksStyle;
     scale: number;
     showToolbar: boolean;
