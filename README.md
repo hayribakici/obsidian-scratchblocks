@@ -67,6 +67,10 @@ To make changes to this plugin, first ensure you have the dependencies installed
 npm install
 ```
 
+### Translation
+
+Check out the [wiki entry](https://github.com/hayribakici/obsidian-scratchblocks/wiki/Translation-howto) on how to add translations.
+
 ### Development
 
 To start building the plugin with what mode enabled run the following command:
