@@ -59,6 +59,10 @@ renders the above as[^1]:
 
 This plugin uses the [`scratchblocks-ts`](https://github.com/hayribakici/scratchblocks-ts) package for rendering Scratchblocks.
 
+## Roadmap
+
+See the [roadmap](docs/roadmap.md) for planned releases.
+
 ## Contributing
 
 To make changes to this plugin, first ensure you have the dependencies installed.
@@ -66,8 +70,6 @@ To make changes to this plugin, first ensure you have the dependencies installed
 ```bash
 npm install
 ```
-
-See the [roadmap](docs/roadmap.md) for planned releases.
 
 ### Translation
 
