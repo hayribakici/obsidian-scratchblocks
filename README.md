@@ -67,6 +67,8 @@ To make changes to this plugin, first ensure you have the dependencies installed
 npm install
 ```
 
+See the [roadmap](docs/roadmap.md) for planned releases.
+
 ### Translation
 
 Check out the [wiki entry](https://github.com/hayribakici/obsidian-scratchblocks/wiki/Translation-howto) on how to add translations.
