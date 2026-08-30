@@ -1,6 +1,6 @@
 ## Release Plan
 
-### 0.0.21: Declarative settings
+### ~~0.0.21: Declarative settings~~ Postponed
 
 Adopt Obsidian’s declarative settings API.
 
