@@ -6,6 +6,11 @@ export function formatError(error: unknown): string {
 
 const INLINE_SCRATCHBLOCKS_PREFIX = "sb ";
 
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export function getScratchblocksSource(editor: Editor): string | null {
   const selection = editor.getSelection().trim();
 

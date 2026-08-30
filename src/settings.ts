@@ -12,14 +12,16 @@ import type {
     ScratchblocksSettings,
     ScratchblocksStyle,
 } from "./utils/types";
+import {
+    isRecord
+} from "./utils/utils.js";
+
 import { AUTO_LANGUAGE_CODE } from "./utils/types";
+
+import type ScratchblocksPlugin from "./main";
 
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
-
-interface SettingsChangedOptions {
-    refreshMarkdownViews?: boolean;
-}
 
 export interface ScratchblocksExportSettings {
     filenameTemplate: string;
@@ -31,7 +33,7 @@ export class ScratchblocksSettingsManager {
     constructor(
         private settings: ScratchblocksSettings,
         private autoLanguage: LanguageCode,
-        private readonly onSettingsChanged: (options?: SettingsChangedOptions) => Promise<void>
+        private readonly plugin: ScratchblocksPlugin
     ) { }
 
     get(): ScratchblocksSettings {
@@ -51,28 +53,75 @@ export class ScratchblocksSettingsManager {
 
     async patchRenderSettings(settings: Partial<RenderSettings>) {
         this.patch(settings);
-        await this.onSettingsChanged({ refreshMarkdownViews: true });
+        await this.plugin.onSettingsChanged({ refreshMarkdownViews: true });
     }
 
     async patchExportSettings(settings: Partial<ExportSettings>) {
         this.patch(settings);
-        await this.onSettingsChanged();
+        await this.plugin.onSettingsChanged();
     }
 
-    getRenderOptions(): RenderOptions {
+    getRenderOptions(frontmatter?: unknown): RenderOptions {
+        const settings = {
+            ...this.settings,
+            ...this.parseLocalRenderSettings(frontmatter),
+        };
+
         return {
-            languages: this.getRenderLanguagesWithFallback(),
-            style: this.settings.style,
-            scale: this.settings.scale,
+            languages: this.getRenderLanguageCodesWithFallback(settings.languageCode),
+            style: settings.style,
+            scale: settings.scale,
         };
     }
 
-    getInlineRenderOptions(): RenderOptions {
+    getInlineRenderOptions(frontmatter?: unknown): RenderOptions {
+        const options = this.getRenderOptions(frontmatter);
+
         return {
-            languages: this.getRenderLanguagesWithFallback(),
-            style: this.settings.style,
+            languages: options.languages,
+            style: options.style,
             scale: INLINE_SCALE,
         };
+    }
+
+    private parseLocalRenderSettings(frontmatter?: unknown): Partial<RenderSettings> {
+        console.log(frontmatter);
+        if (!isRecord(frontmatter)) {
+            return {};
+        }
+
+        const localSettings = frontmatter.scratchblocks;
+
+        if (!isRecord(localSettings)) {
+            return {};
+        }
+
+        const settings: Partial<RenderSettings> = {};
+
+        if (this.isValidLanguageSetting(localSettings.languageCode)) {
+            settings.languageCode = localSettings.languageCode;
+        }
+
+        if (
+            localSettings.style === "scratch2" ||
+            localSettings.style === "scratch3" ||
+            localSettings.style === "scratch3-high-contrast"
+        ) {
+            settings.style = localSettings.style;
+        }
+
+        if (typeof localSettings.scale === "number") {
+            settings.scale = localSettings.scale;
+        }
+
+        return settings;
+    }
+
+    private isValidLanguageSetting(value: unknown): value is LanguageCode {
+        return (
+            typeof value === "string" &&
+            (value === AUTO_LANGUAGE_CODE || this.plugin.hasLanguageCode(value))
+        );
     }
 
     getExportSettings(): ScratchblocksExportSettings {
@@ -86,16 +135,16 @@ export class ScratchblocksSettingsManager {
         return this.settings.showToolbar;
     }
 
-    getRenderLanguageCode(): LanguageCode {
-        if (this.settings.languageCode === AUTO_LANGUAGE_CODE) {
+    private getRenderLanguageCode(languageCode: LanguageCode): LanguageCode {
+        if (languageCode === AUTO_LANGUAGE_CODE) {
             return this.autoLanguage;
         }
 
-        return this.settings.languageCode;
+        return languageCode;
     }
 
-    private getRenderLanguagesWithFallback(): LanguageCode[] {
-        const languageCode = this.getRenderLanguageCode();
+    private getRenderLanguageCodesWithFallback(localLanguageCode: LanguageCode): LanguageCode[] {
+        const languageCode = this.getRenderLanguageCode(localLanguageCode);
 
         if (languageCode === FALLBACK_LANGUAGE) {
             return [FALLBACK_LANGUAGE];

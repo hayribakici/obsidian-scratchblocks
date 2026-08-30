@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin, editorLivePreviewField, getLanguage } from "obsidian";
+import { MarkdownView, Plugin, TFile, editorLivePreviewField, getLanguage } from "obsidian";
 
 import {
   ScratchblocksSettingTab,
@@ -15,6 +15,7 @@ import {
   getInlineScratchblocksSource,
   getScratchblocksFenceSource,
   getScratchblocksSource,
+  isRecord,
 } from "./utils/utils";
 
 import { AUTO_LANGUAGE_CODE } from "./utils/types";
@@ -47,7 +48,7 @@ export default class ScratchblocksPlugin extends Plugin {
     this.settingsManager = new ScratchblocksSettingsManager(
       DEFAULT_SETTINGS,
       this.getAutoLanguageCode(),
-      (options) => this.onSettingsChanged(options)
+      this
     );
 
     this.scratchblocksExporter = new ScratchblocksExporter(
@@ -62,9 +63,6 @@ export default class ScratchblocksPlugin extends Plugin {
       this.scratchblocksToolbar,
       {
         engine: this.engine,
-        getRenderOptions: () => this.settingsManager.getRenderOptions(),
-        getInlineRenderOptions: () =>
-          this.settingsManager.getInlineRenderOptions(),
         getShowToolbar: () => this.settingsManager.getShowToolbar(),
         exportAllPNGFromFile: (sourcePath: string) =>
           this.scratchblocksExporter.exportAllPNGFromFile(sourcePath),
@@ -88,20 +86,37 @@ export default class ScratchblocksPlugin extends Plugin {
   private registerScratchblocksProcessors() {
     fencedLanguagesPrefixes.forEach((language) => {
       this.registerMarkdownCodeBlockProcessor(language, (src, el, ctx) => {
-        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath);
+        const frontmatter = this.getFrontmatter(ctx.sourcePath);
+        const renderOptions = this.settingsManager.getRenderOptions(frontmatter);
+        console.log(renderOptions);
+        this.scratchblocksView.renderCodeBlock(src, el, ctx.sourcePath, renderOptions);
       });
     });
-    this.registerMarkdownPostProcessor((el) => {
-      this.scratchblocksView.renderInlineCodeElements(el);
+    this.registerMarkdownPostProcessor((el, ctx) => {
+      const frontmatter = this.getFrontmatter(ctx.sourcePath);
+      const renderOptions = this.settingsManager.getInlineRenderOptions(frontmatter);
+      this.scratchblocksView.renderInlineCodeElements(el, renderOptions);
     });
     this.registerEditorExtension(
       createBacktickedTextExtension(
         getInlineScratchblocksSource,
-        (src, targetDocument) =>
-          this.scratchblocksView.renderInlineCode(src, targetDocument),
+        (src, targetDocument) => {
+          const renderOptions = this.settingsManager.getInlineRenderOptions();
+          return this.scratchblocksView.renderInlineCode(src, targetDocument, renderOptions);
+        },
         editorLivePreviewField
       )
     );
+  }
+
+  private getFrontmatter(sourcePath: string): unknown {
+    const file = this.app.vault.getAbstractFileByPath(sourcePath);
+
+    if (!(file instanceof TFile)) {
+      return undefined;
+    }
+
+    return this.app.metadataCache.getFileCache(file)?.frontmatter;
   }
 
   private registerCommands() {
@@ -253,6 +268,10 @@ export default class ScratchblocksPlugin extends Plugin {
     }
   }
 
+  hasLanguageCode(languageCode: string): boolean {
+    return this.engine.hasLanguage(languageCode);
+  }
+
   refreshMarkdownViews() {
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
       if (leaf.view instanceof MarkdownView) {
@@ -315,8 +334,4 @@ function getSavedSettings(value: unknown): Partial<ScratchblocksSettings> {
   }
 
   return settings;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
