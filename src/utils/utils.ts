@@ -1,4 +1,8 @@
 import type { Editor } from "obsidian";
+import {
+  FRONTMATTER_KEY_LANG,
+  FRONTMATTER_KEY_SCALE,
+} from "./types";
 
 export function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -158,4 +162,48 @@ function isScratchblocksFence(line: string): boolean {
   const trimmed = line.trim().toLowerCase();
 
   return /^(`{3,}|~{3,})(scratchblock|scratchblocks|sb)$/.test(trimmed);
+}
+
+export function hasValidScratchblocksFrontmatter(frontmatter: unknown): boolean {
+  if (!isRecord(frontmatter)) {
+    return false;
+  }
+
+  let hasScratchblocksSetting = false;
+
+  for (const [key, value] of Object.entries(frontmatter)) {
+    if (key === FRONTMATTER_KEY_LANG) {
+      if (!isNonEmptyString(value)) {
+        return false;
+      }
+
+      hasScratchblocksSetting = true;
+    }
+
+    if (key === FRONTMATTER_KEY_SCALE) {
+      if (!isFrontmatterNumber(value)) {
+        return false;
+      }
+
+      hasScratchblocksSetting = true;
+    }
+  }
+
+  return hasScratchblocksSetting;
+}
+
+export function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+export function isFrontmatterNumber(value: unknown): boolean {
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    return Number.isFinite(Number(value));
+  }
+
+  return false;
 }

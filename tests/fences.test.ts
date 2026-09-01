@@ -1,5 +1,8 @@
 import assert from "assert/strict";
-import { getAllScratchblocksSourcesFromText } from "../src/utils/utils";
+import {
+    getAllScratchblocksSourcesFromText,
+    hasValidScratchblocksFrontmatter,
+} from "../src/utils/utils";
 
 function test(name: string, run: () => void) {
     run();
@@ -75,4 +78,18 @@ test("supports four-backtick scratchblocks fences", () => {
     assert.deepEqual(getAllScratchblocksSourcesFromText(markdown), [
         "when green flag clicked",
     ]);
+});
+
+test("detects only usable scratchblocks frontmatter values", () => {
+    assert.equal(hasValidScratchblocksFrontmatter({}), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-scale": null }), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-scale": "" }), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-scale": "abc" }), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-lang": "" }), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ title: "Note" }), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-lang": "de", "sb-scale": "" }), false);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-scale": 1.2 }), true);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-scale": "1.2" }), true);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-lang": "de" }), true);
+    assert.equal(hasValidScratchblocksFrontmatter({ "sb-lang": "de", "sb-scale": 1.2 }), true);
 });

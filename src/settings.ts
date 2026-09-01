@@ -13,10 +13,15 @@ import type {
     ScratchblocksStyle,
 } from "./utils/types";
 import {
-    isRecord
+    hasValidScratchblocksFrontmatter,
+    isFrontmatterNumber,
 } from "./utils/utils.js";
 
-import { AUTO_LANGUAGE_CODE } from "./utils/types";
+import {
+    AUTO_LANGUAGE_CODE,
+    FRONTMATTER_KEY_LANG,
+    FRONTMATTER_KEY_SCALE,
+} from "./utils/types";
 
 import type ScratchblocksPlugin from "./main";
 
@@ -85,33 +90,20 @@ export class ScratchblocksSettingsManager {
     }
 
     private parseLocalRenderSettings(frontmatter?: unknown): Partial<RenderSettings> {
-        console.log(frontmatter);
-        if (!isRecord(frontmatter)) {
+        if (!hasValidScratchblocksFrontmatter(frontmatter)) {
             return {};
         }
-
-        const localSettings = frontmatter.scratchblocks;
-
-        if (!isRecord(localSettings)) {
-            return {};
-        }
-
         const settings: Partial<RenderSettings> = {};
 
-        if (this.isValidLanguageSetting(localSettings.languageCode)) {
-            settings.languageCode = localSettings.languageCode;
+        const lang: unknown = frontmatter[FRONTMATTER_KEY_LANG];
+        const scale = getFrontmatterScale(frontmatter[FRONTMATTER_KEY_SCALE]);
+
+        if (this.isValidLanguageSetting(lang)) {
+            settings.languageCode = lang;
         }
 
-        if (
-            localSettings.style === "scratch2" ||
-            localSettings.style === "scratch3" ||
-            localSettings.style === "scratch3-high-contrast"
-        ) {
-            settings.style = localSettings.style;
-        }
-
-        if (typeof localSettings.scale === "number") {
-            settings.scale = localSettings.scale;
+        if (scale !== null) {
+            settings.scale = scale;
         }
 
         return settings;
@@ -300,4 +292,12 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             { cacheSize: 0 }
         );
     }
+}
+
+function getFrontmatterScale(value: unknown): number | null {
+    if (!isFrontmatterNumber(value)) {
+        return null;
+    }
+
+    return Number(value);
 }
