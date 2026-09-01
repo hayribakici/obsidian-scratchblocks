@@ -39,7 +39,7 @@ sb-lang: "it" # render Scratchblocks as Italian
 sb-scale: 1.2 # render larger blocks
 ```
 
-Note, that the scaling only affects the ~```~ fenced blocks. The inline blocks stay the same size.
+Note, that the scaling only affects the ``` fenced blocks. The inline blocks stay the same size.
 
 ## Caveats and workarounds
 
