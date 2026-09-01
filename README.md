@@ -39,6 +39,8 @@ sb-lang: "it" # render Scratchblocks as Italian
 sb-scale: 1.2 # render larger blocks
 ```
 
+Note, that the scaling only affects the ~```~ fenced blocks. The inline blocks stay the same size.
+
 ## Caveats and workarounds
 
 One caveat for inline code is, that it may appear somewhat smaller than the surrounding text. This is due to the internal scale being different from the one used for multi-line codeblocks. CSS snippets can partly adjust the appearance to fit the user's font and line spacing ([CSS snippets are described here](https://obsidian.md/help/snippets), but better managed via plugins such as [SnipDock](https://community.obsidian.md/plugins/snipdock)).
