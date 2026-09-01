@@ -14,6 +14,15 @@ export type {
 
 export const AUTO_LANGUAGE_CODE = "auto";
 
+export const FRONTMATTER_KEY_LANG = "sb-lang";
+export const FRONTMATTER_KEY_SCALE = "sb-scale";
+
+export const SB_STYLE_SCRATCH2 = "scratch2";
+export const SB_STYLE_SCRATCH3 = "scratch3";
+export const SB_STYLE_SCRATCH3_HI = "scratch3-high-contrast";
+
+export const SB_STYLES = [SB_STYLE_SCRATCH2, SB_STYLE_SCRATCH3, SB_STYLE_SCRATCH3_HI];
+
 export type ScratchblocksPNGExportPath = "ask" | "current";
 
 export interface RenderSettings {
@@ -29,4 +38,3 @@ export interface ExportSettings {
 }
 
 export type ScratchblocksSettings = RenderSettings & ExportSettings;
-

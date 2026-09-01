@@ -11,7 +11,11 @@ interface BacktickedText {
 
 export function createBacktickedTextExtension(
   getReplacementText: (text: string) => string | null,
-  renderReplacement: (text: string, targetDocument: Document) => HTMLElement,
+  renderReplacement: (
+    text: string,
+    targetDocument: Document,
+    view: EditorView
+  ) => HTMLElement,
   livePreviewField: StateField<boolean>
 ) {
   return ViewPlugin.fromClass(
@@ -96,7 +100,11 @@ function buildBacktickedTextDecorations(
   view: EditorView,
   fencedLines: Set<number>,
   getReplacementText: (text: string) => string | null,
-  renderReplacement: (text: string, targetDocument: Document) => HTMLElement
+  renderReplacement: (
+    text: string,
+    targetDocument: Document,
+    view: EditorView
+  ) => HTMLElement
 ): DecorationSet {
   const ranges: Range<Decoration>[] = [];
 
@@ -121,10 +129,7 @@ function buildBacktickedTextDecorations(
 
           ranges.push(
             Decoration.replace({
-              widget: new BacktickedTextWidget(
-                replacementText,
-                renderReplacement
-              ),
+              widget: new BacktickedTextWidget(replacementText, renderReplacement),
             }).range(from, to)
           );
         }
@@ -207,7 +212,8 @@ class BacktickedTextWidget extends WidgetType {
     private readonly text: string,
     private readonly renderReplacement: (
       text: string,
-      targetDocument: Document
+      targetDocument: Document,
+      view: EditorView
     ) => HTMLElement
   ) {
     super();
@@ -218,6 +224,6 @@ class BacktickedTextWidget extends WidgetType {
   }
 
   toDOM(view: EditorView) {
-    return this.renderReplacement(this.text, view.dom.ownerDocument);
+    return this.renderReplacement(this.text, view.dom.ownerDocument, view);
   }
 }

@@ -6,8 +6,6 @@ import type { RenderOptions } from "./utils/types";
 
 interface ScratchblocksViewOptions {
   engine: ScratchblocksEngine;
-  getRenderOptions(): RenderOptions;
-  getInlineRenderOptions(): RenderOptions;
   getShowToolbar(): boolean;
   exportAllPNGFromFile(sourcePath: string): Promise<void>;
 }
@@ -16,16 +14,20 @@ export class ScratchblocksView {
   constructor(
     private readonly toolbar: ScratchblocksToolbar,
     private readonly options: ScratchblocksViewOptions
-  ) {}
+  ) { }
 
-  renderInlineCode(src: string, targetDocument: Document): HTMLElement {
+  renderInlineCode(
+    src: string,
+    targetDocument: Document,
+    renderOptions: RenderOptions
+  ): HTMLElement {
     const container = targetDocument.createElement("span");
     container.className = "scratchblocks-inline-rendered";
 
     try {
       const svg = this.options.engine.toInlineSVG(
         src,
-        this.options.getInlineRenderOptions()
+        renderOptions
       );
 
       container.appendChild(svg);
@@ -39,7 +41,7 @@ export class ScratchblocksView {
     return container;
   }
 
-  renderInlineCodeElements(el: HTMLElement) {
+  renderInlineCodeElements(el: HTMLElement, renderOptions: RenderOptions) {
     el.querySelectorAll("code").forEach((codeEl) => {
       if (codeEl.closest("pre")) {
         return;
@@ -51,19 +53,22 @@ export class ScratchblocksView {
         return;
       }
 
-      codeEl.replaceWith(this.renderInlineCode(src, codeEl.ownerDocument));
+      codeEl.replaceWith(
+        this.renderInlineCode(src, codeEl.ownerDocument, renderOptions)
+      );
     });
   }
 
   renderCodeBlock(
     src: string,
     el: HTMLElement,
-    sourcePath: string
+    sourcePath: string,
+    renderOptions: RenderOptions
   ) {
     try {
       const svg = this.options.engine.toSVG(
         src,
-        this.options.getRenderOptions()
+        renderOptions
       );
 
       const rendered = this.toolbar.wrapWithToolBarIfEnabled(svg, {

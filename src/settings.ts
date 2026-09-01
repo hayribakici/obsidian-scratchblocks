@@ -12,14 +12,21 @@ import type {
     ScratchblocksSettings,
     ScratchblocksStyle,
 } from "./utils/types";
-import { AUTO_LANGUAGE_CODE } from "./utils/types";
+import {
+    hasValidScratchblocksFrontmatter,
+    isFrontmatterNumber,
+} from "./utils/utils.js";
+
+import {
+    AUTO_LANGUAGE_CODE,
+    FRONTMATTER_KEY_LANG,
+    FRONTMATTER_KEY_SCALE,
+} from "./utils/types";
+
+import type ScratchblocksPlugin from "./main";
 
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
 const INLINE_SCALE = 0.4;
-
-interface SettingsChangedOptions {
-    refreshMarkdownViews?: boolean;
-}
 
 export interface ScratchblocksExportSettings {
     filenameTemplate: string;
@@ -31,7 +38,7 @@ export class ScratchblocksSettingsManager {
     constructor(
         private settings: ScratchblocksSettings,
         private autoLanguage: LanguageCode,
-        private readonly onSettingsChanged: (options?: SettingsChangedOptions) => Promise<void>
+        private readonly plugin: ScratchblocksPlugin
     ) { }
 
     get(): ScratchblocksSettings {
@@ -51,28 +58,62 @@ export class ScratchblocksSettingsManager {
 
     async patchRenderSettings(settings: Partial<RenderSettings>) {
         this.patch(settings);
-        await this.onSettingsChanged({ refreshMarkdownViews: true });
+        await this.plugin.onSettingsChanged({ refreshMarkdownViews: true });
     }
 
     async patchExportSettings(settings: Partial<ExportSettings>) {
         this.patch(settings);
-        await this.onSettingsChanged();
+        await this.plugin.onSettingsChanged();
     }
 
-    getRenderOptions(): RenderOptions {
+    getRenderOptions(frontmatter?: unknown): RenderOptions {
+        const settings = {
+            ...this.settings,
+            ...this.parseLocalRenderSettings(frontmatter),
+        };
+
         return {
-            languages: this.getRenderLanguagesWithFallback(),
-            style: this.settings.style,
-            scale: this.settings.scale,
+            languages: this.getRenderLanguageCodesWithFallback(settings.languageCode),
+            style: settings.style,
+            scale: settings.scale,
         };
     }
 
-    getInlineRenderOptions(): RenderOptions {
+    getInlineRenderOptions(frontmatter?: unknown): RenderOptions {
+        const options = this.getRenderOptions(frontmatter);
+
         return {
-            languages: this.getRenderLanguagesWithFallback(),
-            style: this.settings.style,
+            languages: options.languages,
+            style: options.style,
             scale: INLINE_SCALE,
         };
+    }
+
+    private parseLocalRenderSettings(frontmatter?: unknown): Partial<RenderSettings> {
+        if (!hasValidScratchblocksFrontmatter(frontmatter)) {
+            return {};
+        }
+        const settings: Partial<RenderSettings> = {};
+
+        const lang: unknown = frontmatter[FRONTMATTER_KEY_LANG];
+        const scale = getFrontmatterScale(frontmatter[FRONTMATTER_KEY_SCALE]);
+
+        if (this.isValidLanguageSetting(lang)) {
+            settings.languageCode = lang;
+        }
+
+        if (scale !== null) {
+            settings.scale = scale;
+        }
+
+        return settings;
+    }
+
+    private isValidLanguageSetting(value: unknown): value is LanguageCode {
+        return (
+            typeof value === "string" &&
+            (value === AUTO_LANGUAGE_CODE || this.plugin.hasLanguageCode(value))
+        );
     }
 
     getExportSettings(): ScratchblocksExportSettings {
@@ -86,16 +127,16 @@ export class ScratchblocksSettingsManager {
         return this.settings.showToolbar;
     }
 
-    getRenderLanguageCode(): LanguageCode {
-        if (this.settings.languageCode === AUTO_LANGUAGE_CODE) {
+    private getRenderLanguageCode(languageCode: LanguageCode): LanguageCode {
+        if (languageCode === AUTO_LANGUAGE_CODE) {
             return this.autoLanguage;
         }
 
-        return this.settings.languageCode;
+        return languageCode;
     }
 
-    private getRenderLanguagesWithFallback(): LanguageCode[] {
-        const languageCode = this.getRenderLanguageCode();
+    private getRenderLanguageCodesWithFallback(localLanguageCode: LanguageCode): LanguageCode[] {
+        const languageCode = this.getRenderLanguageCode(localLanguageCode);
 
         if (languageCode === FALLBACK_LANGUAGE) {
             return [FALLBACK_LANGUAGE];
@@ -251,4 +292,12 @@ export class ScratchblocksSettingTab extends PluginSettingTab {
             { cacheSize: 0 }
         );
     }
+}
+
+function getFrontmatterScale(value: unknown): number | null {
+    if (!isFrontmatterNumber(value)) {
+        return null;
+    }
+
+    return Number(value);
 }
