@@ -21,8 +21,9 @@ export class ScratchblocksView {
     targetDocument: Document,
     renderOptions: RenderOptions
   ): HTMLElement {
-    const container = targetDocument.createElement("span");
-    container.className = "scratchblocks-inline-rendered";
+    const container = targetDocument.createSpan({
+      cls: "scratchblocks-inline-rendered",
+    });
 
     try {
       const svg = this.options.engine.toInlineSVG(
@@ -32,9 +33,10 @@ export class ScratchblocksView {
 
       container.appendChild(svg);
     } catch (error) {
-      const errorEl = targetDocument.createElement("span");
-      errorEl.className = "scratchblocks-error";
-      errorEl.textContent = `Error: ${formatError(error)}`;
+      const errorEl = targetDocument.createSpan({
+        text: `Error: ${formatError(error)}`,
+        cls: "scratchblocks-error",
+      });
       container.appendChild(errorEl);
     }
 
