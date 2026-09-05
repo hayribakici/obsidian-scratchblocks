@@ -30,7 +30,7 @@ will be rendered as:
 
 > OMG, I guess a <img width="54" height="30" alt="a green flag block is displayed inline" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" /> snuck itself into the text.
 
-### Local configuration
+## Local configuration
 
 Add yaml frontmatter to override the global settings:
 

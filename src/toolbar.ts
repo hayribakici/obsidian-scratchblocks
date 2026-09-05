@@ -22,6 +22,7 @@ export class ScratchblocksToolbar {
     const container = targetDocument.createDocumentFragment().createDiv({
       cls: "scratchblocks-rendered",
     });
+    fragment.appendChild(container);
 
     if (options.showToolbar) {
       const toolbar = container.createDiv({

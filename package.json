@@ -16,7 +16,8 @@
     "dev": "obsidian-plugin dev src/main.ts",
     "lint": "eslint .",
     "test": "esbuild tests/fences.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-fences.test.js && node /tmp/obsidian-scratchblocks-fences.test.js && esbuild tests/backticked-text.test.ts --bundle --platform=node --outfile=/tmp/obsidian-scratchblocks-backticked-text.test.js && node /tmp/obsidian-scratchblocks-backticked-text.test.js",
-    "typesafe-i18n": "typesafe-i18n --no-watch"
+    "typesafe-i18n": "typesafe-i18n --no-watch",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "devDependencies": {
     "builtin-modules": "^3.3.0",
