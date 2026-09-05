@@ -19,13 +19,11 @@ export class ScratchblocksToolbar {
     options: RenderedBlockOptions,
     targetDocument: Document
   ): HTMLElement {
-    // create a detached fragment and create the container on the document
-    // (DocumentFragment may not have the convenience helper createDiv).
-    const fragment = targetDocument.createDocumentFragment();
-    const container = targetDocument.createDiv({
+    // create a DocumentFragment via the document/window helper so we can use createDiv on it
+    const fragment = targetDocument.win.documentFragment();
+    const container = fragment.createDiv({
       cls: "scratchblocks-rendered",
     });
-    fragment.appendChild(container);
 
     if (options.showToolbar) {
       const toolbar = container.createDiv({
