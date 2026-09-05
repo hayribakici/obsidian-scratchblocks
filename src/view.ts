@@ -41,6 +41,7 @@ export class ScratchblocksView {
         text: `Error: ${formatError(error)}`,
         cls: "scratchblocks-error",
       });
+      container.appendChild(errorEl);
     }
 
     return container;
