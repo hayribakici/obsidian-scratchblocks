@@ -7,12 +7,9 @@ Adopt Obsidian’s declarative settings API.
 - Add `getSettingDefinitions()`
 - Make settings searchable in Obsidian 1.13+
 
-### 0.0.22: Inline export context menu
+### 0.0.22: CSS improvement
 
-Add export actions for inline `sb ...` scratchblocks.
-
-- Context menu for rendered inline scratchblocks
-- Export/copy PNG/SVG
+Improve CSS style of inline scratchblocks.
 
 ### 0.0.23: Read `.sb3` project
 

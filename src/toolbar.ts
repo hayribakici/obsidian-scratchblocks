@@ -19,7 +19,7 @@ export class ScratchblocksToolbar {
     options: RenderedBlockOptions,
     targetDocument: Document
   ): HTMLElement {
-    const container = targetDocument.createDiv({
+    const container = targetDocument.createDocumentFragment().createDiv({
       cls: "scratchblocks-rendered",
     });
 

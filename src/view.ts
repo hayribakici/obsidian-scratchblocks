@@ -1,4 +1,7 @@
-import { formatError, getInlineScratchblocksSource } from "./utils/utils";
+import {
+  formatError,
+  getInlineScratchblocksSource,
+} from "./utils/utils";
 
 import type { ScratchblocksToolbar } from "./toolbar";
 import type { ScratchblocksEngine } from "scratchblocks-ts";
@@ -21,7 +24,7 @@ export class ScratchblocksView {
     targetDocument: Document,
     renderOptions: RenderOptions
   ): HTMLElement {
-    const container = targetDocument.createSpan({
+    const container = targetDocument.createDocumentFragment().createSpan({
       cls: "scratchblocks-inline-rendered",
     });
 
@@ -33,17 +36,19 @@ export class ScratchblocksView {
 
       container.appendChild(svg);
     } catch (error) {
-      const errorEl = targetDocument.createSpan({
+      container.createSpan({
         text: `Error: ${formatError(error)}`,
         cls: "scratchblocks-error",
       });
-      container.appendChild(errorEl);
     }
 
     return container;
   }
 
-  renderInlineCodeElements(el: HTMLElement, renderOptions: RenderOptions) {
+  renderInlineCodeElements(
+    el: HTMLElement,
+    getRenderOptions: (textContext?: Element | null) => RenderOptions
+  ) {
     el.querySelectorAll("code").forEach((codeEl) => {
       if (codeEl.closest("pre")) {
         return;
@@ -55,9 +60,13 @@ export class ScratchblocksView {
         return;
       }
 
-      codeEl.replaceWith(
-        this.renderInlineCode(src, codeEl.ownerDocument, renderOptions)
+      const rendered = this.renderInlineCode(
+        src,
+        codeEl.ownerDocument,
+        getRenderOptions(codeEl.parentElement)
       );
+
+      codeEl.replaceWith(rendered);
     });
   }
 
