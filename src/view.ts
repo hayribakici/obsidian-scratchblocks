@@ -24,7 +24,7 @@ export class ScratchblocksView {
     targetDocument: Document,
     renderOptions: RenderOptions
   ): HTMLElement {
-    const fragment = targetDocument.createDocumentFragment();
+    const fragment = targetDocument.win.createFragment();
     const container = fragment.createSpan({
       cls: "scratchblocks-inline-rendered",
     });
@@ -61,7 +61,7 @@ export class ScratchblocksView {
         return;
       }
 
-      const renderOptions = getRenderOptions(codeEl.parentElement || null);
+      const renderOptions = getRenderOptions(codeEl.parentElement);
       const rendered = this.renderInlineCode(src, codeEl.ownerDocument, renderOptions);
 
       codeEl.replaceWith(rendered);
