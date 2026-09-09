@@ -7,20 +7,27 @@ Adopt Obsidian’s declarative settings API.
 - Add `getSettingDefinitions()`
 - Make settings searchable in Obsidian 1.13+
 
-### 0.0.22: Inline export context menu
+### 0.0.22: CSS and sizing
 
-Add export actions for inline `sb ...` scratchblocks.
+Improve the appearance of inline Scratchblocks.
 
-- Context menu for rendered inline scratchblocks
-- Export/copy PNG/SVG
+- Make inline blocks follow the surrounding text size
+- Keep styling consistent across themes and font sizes
 
-### 0.0.23: Read `.sb3` project
+### 0.0.23: Rendering polish
 
-Start Scratch project integration through [scratch-project-ts](https://github.com/hayribakici/scratch-project-ts).
+Improve the fallback behavior when rendering fails.
 
-### 1.0.0: Scratch project tabbed view
+- Keep language, style, scale, sizing, and error handling consistent across reading view, live preview, and exports
+- Show a clear rendering error without adding a second syntax parser
 
-Full first version of Scratch project integration.
+### 0.0.24: Code folding
 
-- Show scripts/code per sprite
-- Use a tabbed view inside Obsidian
+- Fold Scratchblocks fences in the editor
+
+## Future Ideas
+
+### Scratch project integration
+
+- Read `.sb3` projects through [scratch-project-ts](https://github.com/hayribakici/scratch-project-ts)
+- Show scripts/code per sprite in a tabbed view inside Obsidian
