@@ -2,15 +2,8 @@
 
 Render `scratchblocks` code blocks in Obsidian.
 
-````suggestion
-```scratchblock
-when green flag clicked
-```
-````
+<img width="370" height="310" alt="7013" src="https://github.com/user-attachments/assets/a4a2455a-11b3-400b-9c30-377ee30d0d92" />
 
-will be rendered as:
-
-<img width="120" height="66" alt="Bildschirmfoto 2026-05-14 um 23 08 25" src="https://github.com/user-attachments/assets/3d2dd87c-7a26-4ef8-96dd-0d8d1570006d" />
 
 Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) on how to write Scratch code.
 
