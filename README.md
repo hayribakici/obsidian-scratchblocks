@@ -1,13 +1,11 @@
 # Obsidian-Scratchblocks
 
-Render `scratchblocks` code blocks in Obsidian.
+Render fenced `scratchblock` or `scratchblocks` code blocks in Obsidian.
+See the [Scratch code documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) for the syntax.
 
-<img width="370" height="310" alt="7013" src="https://github.com/user-attachments/assets/a4a2455a-11b3-400b-9c30-377ee30d0d92" />
+<img width="370" height="310" alt="Rendered Scratchblocks in Obsidian" src="https://github.com/user-attachments/assets/a4a2455a-11b3-400b-9c30-377ee30d0d92" />
 
-
-Checkout the [Scratch documentation](https://en.scratch-wiki.info/wiki/Block_Plugin/Syntax) on how to write Scratch code.
-
-Both `scratchblock` and `scratchblocks` code fences are supported.
+**Also supports [inline blocks](#inline-scratchblocks) and [local configuration](#local-configuration).**
 
 ## Inline `scratchblocks`
 
@@ -15,9 +13,9 @@ Use `sb <scratchcode>` in order to display inline scratchblocks code with a `sb`
 
 So writing
 
-~~~suggestion
+```markdown
 OMG, I guess a `sb when green flag clicked` snuck itself into the text.
-~~~
+```
 
 will be rendered as:
 
@@ -25,7 +23,7 @@ will be rendered as:
 
 ## Local configuration
 
-Add yaml frontmatter to override the global settings:
+Add yaml frontmatter to override the global settings for the current note:
 
 ```yaml
 sb-lang: "it" # render Scratchblocks as Italian
