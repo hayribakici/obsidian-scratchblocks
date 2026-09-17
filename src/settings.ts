@@ -26,13 +26,7 @@ import {
 import type ScratchblocksPlugin from "./main";
 
 const FALLBACK_LANGUAGE = "en" as LanguageCode;
-const DEFAULT_INLINE_FONT_SIZE = 16;
-const DEFAULT_INLINE_LINE_HEIGHT = 24;
-const DEFAULT_INLINE_SCALE = 0.4;
-const DEFAULT_INLINE_TARGET_HEIGHT = Math.max(
-    DEFAULT_INLINE_FONT_SIZE * 1.4,
-    DEFAULT_INLINE_LINE_HEIGHT * 0.95
-);
+const INLINE_SCALE = 0.4;
 
 export interface ScratchblocksExportSettings {
     filenameTemplate: string;
@@ -85,13 +79,13 @@ export class ScratchblocksSettingsManager {
         };
     }
 
-    getInlineRenderOptions(frontmatter?: unknown, textContext?: Element | null): RenderOptions {
+    getInlineRenderOptions(frontmatter?: unknown): RenderOptions {
         const options = this.getRenderOptions(frontmatter);
 
         return {
             languages: options.languages,
             style: options.style,
-            scale: this.calculateInlineScale(textContext),
+            scale: INLINE_SCALE,
         };
     }
 
@@ -149,35 +143,6 @@ export class ScratchblocksSettingsManager {
         }
 
         return [languageCode, FALLBACK_LANGUAGE];
-    }
-
-    private calculateInlineScale(textContext?: Element | null): number {
-        if (!textContext) {
-            return DEFAULT_INLINE_SCALE;
-        }
-
-        const style = textContext.ownerDocument.defaultView?.getComputedStyle(textContext);
-
-        if (!style) {
-            return DEFAULT_INLINE_SCALE;
-        }
-
-        const fontSize = Number.parseFloat(style.fontSize);
-        const lineHeight = Number.parseFloat(style.lineHeight);
-
-        if (!Number.isFinite(fontSize)) {
-            return DEFAULT_INLINE_SCALE;
-        }
-
-        return DEFAULT_INLINE_SCALE *
-            this.getInlineTargetHeight(fontSize, lineHeight) /
-            DEFAULT_INLINE_TARGET_HEIGHT;
-    }
-
-    private getInlineTargetHeight(fontSize: number, lineHeight: number): number {
-        return Number.isFinite(lineHeight)
-            ? Math.max(fontSize * 1.4, lineHeight * 0.95)
-            : fontSize * 1.4;
     }
 }
 

@@ -78,7 +78,6 @@ export default class ScratchblocksPlugin extends Plugin {
 
     this.registerScratchblocksProcessors();
     this.registerFrontmatterChangeHandler();
-    this.registerCssChangeHandler();
     this.registerCommands();
     this.registerEditorMenu();
     this.addSettingTab(
@@ -100,13 +99,8 @@ export default class ScratchblocksPlugin extends Plugin {
     });
     this.registerMarkdownPostProcessor((el, ctx) => {
       const frontmatter = this.getFrontmatterFromSourcePath(ctx.sourcePath);
-      this.scratchblocksView.renderInlineCodeElements(
-        el,
-        (textContext) => this.settingsManager.getInlineRenderOptions(
-          frontmatter,
-          textContext
-        )
-      );
+      const renderOptions = this.settingsManager.getInlineRenderOptions(frontmatter);
+      this.scratchblocksView.renderInlineCodeElements(el, renderOptions);
     });
     this.registerEditorExtension(
       createBacktickedTextExtension(
@@ -114,17 +108,8 @@ export default class ScratchblocksPlugin extends Plugin {
         (src, targetDocument, view) => {
           const file = view.state.field(editorInfoField).file;
           const frontmatter = this.getFrontmatterFromFile(file);
-          const renderOptions = this.settingsManager.getInlineRenderOptions(
-            frontmatter,
-            view.contentDOM
-          );
-          const rendered = this.scratchblocksView.renderInlineCode(
-            src,
-            targetDocument,
-            renderOptions
-          );
-
-          return rendered;
+          const renderOptions = this.settingsManager.getInlineRenderOptions(frontmatter);
+          return this.scratchblocksView.renderInlineCode(src, targetDocument, renderOptions);
         },
         editorLivePreviewField
       )
@@ -151,12 +136,6 @@ export default class ScratchblocksPlugin extends Plugin {
       }
     })
     );
-  }
-
-  private registerCssChangeHandler() {
-    this.registerEvent(this.app.workspace.on("css-change", () => {
-      this.refreshMarkdownViews();
-    }));
   }
 
   private registerCommands() {
