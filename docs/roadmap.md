@@ -14,6 +14,7 @@ Improve the appearance of inline Scratchblocks.
 - Make inline blocks follow the surrounding text size
 - Keep styling consistent across themes and font sizes
 
+
 ### 0.0.23: Rendering polish
 
 Improve the fallback behavior when rendering fails.
