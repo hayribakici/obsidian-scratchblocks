@@ -1,6 +1,7 @@
 import assert from "assert/strict";
 import {
     getAllScratchblocksSourcesFromText,
+    getScratchblocksFrontmatterKey,
     hasValidScratchblocksFrontmatter,
 } from "../src/utils/utils";
 
@@ -8,6 +9,24 @@ function test(name: string, run: () => void) {
     run();
     console.log(`ok - ${name}`);
 }
+
+test("compares only Scratchblocks frontmatter properties", () => {
+    const key = getScratchblocksFrontmatterKey;
+    const frontmatter = { "sb-lang": "de", "sb-scale": 1.2 };
+    const before = key(frontmatter);
+
+    assert.equal(key({ ...frontmatter, title: "Edited", tags: ["test"] }), before);
+    assert.equal(key({ ...frontmatter, "sb-scale": "1.2" }), before);
+    assert.notEqual(key({ ...frontmatter, "sb-lang": "en" }), before);
+    assert.notEqual(key({ "sb-lang": "de" }), before);
+    assert.notEqual(key(undefined), before);
+    assert.equal(key(undefined), key({ title: "Note" }));
+    assert.equal(key({ "sb-scale": "invalid" }), "");
+
+    frontmatter["sb-scale"] = 2;
+    assert.notEqual(key(frontmatter), before);
+    assert.equal(key({ ...frontmatter }), key(frontmatter));
+});
 
 test("finds all real scratchblocks fences", () => {
     const markdown = [
