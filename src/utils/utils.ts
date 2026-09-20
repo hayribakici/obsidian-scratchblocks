@@ -192,6 +192,17 @@ export function hasValidScratchblocksFrontmatter(frontmatter: unknown): boolean 
   return hasScratchblocksSetting;
 }
 
+/** A saved value for comparing only the note's Scratchblocks properties. */
+export function getScratchblocksFrontmatterKey(frontmatter: unknown): string {
+  if (!isRecord(frontmatter) || !hasValidScratchblocksFrontmatter(frontmatter)) {
+    return "";
+  }
+
+  const language = frontmatter[FRONTMATTER_KEY_LANG] ?? null;
+  const scale = frontmatter[FRONTMATTER_KEY_SCALE];
+  return JSON.stringify([language, isFrontmatterNumber(scale) ? Number(scale) : null]);
+}
+
 export function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
