@@ -12,10 +12,10 @@ import { ScratchblocksToolbar } from "./toolbar";
 import { ScratchblocksView } from "./view";
 import {
   getAllScratchblocksSources,
+  getScratchblocksFrontmatterKey,
   getInlineScratchblocksSource,
   getScratchblocksFenceSource,
   getScratchblocksSource,
-  hasValidScratchblocksFrontmatter,
   isRecord,
 } from "./utils/utils";
 
@@ -145,12 +145,29 @@ export default class ScratchblocksPlugin extends Plugin {
   }
 
   private registerFrontmatterChangeHandler() {
-    this.registerEvent(this.app.metadataCache.on("changed", (_, __, cache) => {
-      if (hasValidScratchblocksFrontmatter(cache.frontmatter)) {
-        this.refreshMarkdownViews();
+    const previous = new WeakMap<TFile, string>();
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const settings = getScratchblocksFrontmatterKey(this.getFrontmatterFromFile(file));
+      if (settings) {
+        previous.set(file, settings);
       }
-    })
-    );
+    }
+
+    this.registerEvent(this.app.metadataCache.on("changed", (file, _, cache) => {
+      const current = getScratchblocksFrontmatterKey(cache.frontmatter);
+      if (!current) {
+        // Refresh once when overrides are removed, then stop tracking the note.
+        if (previous.delete(file)) {
+          this.refreshMarkdownViews(file.path);
+        }
+        return;
+      }
+
+      if (current !== previous.get(file)) {
+        previous.set(file, current);
+        this.refreshMarkdownViews(file.path);
+      }
+    }));
   }
 
   private registerCssChangeHandler() {
@@ -312,9 +329,12 @@ export default class ScratchblocksPlugin extends Plugin {
     return this.engine.hasLanguage(languageCode);
   }
 
-  refreshMarkdownViews() {
+  refreshMarkdownViews(sourcePath?: string) {
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
       if (leaf.view instanceof MarkdownView) {
+        if (sourcePath !== undefined && leaf.view.file?.path !== sourcePath) {
+          return;
+        }
         const rebuildableLeaf = leaf as typeof leaf & {
           rebuildView?: () => void;
         };

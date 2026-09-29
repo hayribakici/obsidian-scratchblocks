@@ -35,6 +35,10 @@ export class ScratchblocksView {
         renderOptions
       );
 
+      if (svg.childElementCount === 0) {
+        throw new Error("Scratchblocks rendered an empty inline SVG");
+      }
+
       container.appendChild(svg);
     } catch (error) {
       const errorEl = fragment.createSpan({
